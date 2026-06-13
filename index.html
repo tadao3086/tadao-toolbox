@@ -1,139 +1,737 @@
-// ============================================
-// タダオの道具箱サイト STEP 3（完全版）
-// 読み取りAPI（doGet）+ 書き込みAPI（doPost）
-//
-// ★最重要★ 下のSECRETを自分だけの合言葉に書き換えてください
-// ============================================
-
-const SECRET = 'ここに合言葉を設定';   // ←★必ず書き換える★
-const SHEET_NAME = 'items';
-
-// --------------------------------------------
-// 読み取りAPI（STEP 1と同じ。変更なし）
-// --------------------------------------------
-function doGet(e) {
-  try {
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
-    if (!sheet) {
-      return jsonResponse({ ok: false, error: 'シートが見つかりません。先にsetup()を実行してください' });
-    }
-    const values = sheet.getDataRange().getValues();
-    const headers = values.shift();
-    const items = values.map(function(row) {
-      const obj = {};
-      headers.forEach(function(h, i) { obj[h] = row[i]; });
-      return obj;
-    });
-    return jsonResponse({ ok: true, count: items.length, items: items });
-  } catch (err) {
-    return jsonResponse({ ok: false, error: String(err) });
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>タダオの道具箱 | AIマンガ家の収蔵目録</title>
+<meta name="description" content="AIマンガ家タダオのプロンプト・GASコード・Webアプリ・マンガ作品を収めた常設展。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #FFFFFF;
+    --wall: #FAF9F7;
+    --ink: #1B1B1B;
+    --sub: #6E6A63;
+    --hairline: #E8E6E1;
+    --seal: #B5342A;
+    --mincho: "Shippori Mincho", "Hiragino Mincho ProN", serif;
+    --gothic: "Zen Kaku Gothic New", "Hiragino Kaku Gothic ProN", sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    html { scroll-behavior: auto; }
+  }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--gothic);
+    font-size: 15px;
+    line-height: 1.8;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  button { font-family: inherit; cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--seal); outline-offset: 3px; }
+
+  /* ---------- ヘッダー：展示室のタイトルウォール ---------- */
+  header {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 88px 24px 56px;
+    text-align: center;
+  }
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.42em;
+    color: var(--sub);
+    text-transform: uppercase;
+    margin-bottom: 26px;
+  }
+  .title-row {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  h1 {
+    font-family: var(--mincho);
+    font-weight: 600;
+    font-size: clamp(34px, 6vw, 52px);
+    letter-spacing: 0.14em;
+    line-height: 1.2;
+  }
+  .seal {
+    width: 34px;
+    height: 34px;
+    background: var(--seal);
+    color: #fff;
+    font-family: var(--mincho);
+    font-size: 19px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transform: rotate(-4deg) translateY(4px);
+    user-select: none;
+  }
+  .lede {
+    margin: 22px auto 0;
+    max-width: 560px;
+    color: var(--sub);
+    font-size: 13.5px;
+  }
+
+  /* ---------- フィルターバー：展示区分タブ ---------- */
+  nav.filters {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: rgba(255,255,255,0.94);
+    backdrop-filter: blur(6px);
+    border-top: 1px solid var(--hairline);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .tabs {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tab {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 15px 14px 13px;
+    font-size: 13.5px;
+    letter-spacing: 0.08em;
+    color: var(--sub);
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .tab .num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: #B8B4AC;
+  }
+  .tab[aria-selected="true"] {
+    color: var(--ink);
+    font-weight: 700;
+    border-bottom-color: var(--ink);
+  }
+  .tab[aria-selected="true"]::before {
+    content: "";
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--seal);
+  }
+  .tagbar {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 12px 24px 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .tagchip {
+    border: 1px solid var(--hairline);
+    background: var(--paper);
+    border-radius: 999px;
+    padding: 3px 13px;
+    font-size: 12px;
+    color: var(--sub);
+    transition: border-color .15s, color .15s;
+  }
+  .tagchip:hover { border-color: var(--ink); color: var(--ink); }
+  .tagchip.on {
+    border-color: var(--seal);
+    color: var(--seal);
+    font-weight: 700;
+  }
+
+  /* ---------- ギャラリー ---------- */
+  main {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 44px 24px 80px;
+  }
+  .status {
+    text-align: center;
+    color: var(--sub);
+    padding: 70px 0;
+    font-size: 13.5px;
+    letter-spacing: 0.06em;
+  }
+  .status .err-hint {
+    display: block;
+    margin-top: 10px;
+    font-size: 12px;
+    color: #B8B4AC;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 36px 28px;
+  }
+  .card {
+    background: var(--paper);
+    border: 1px solid var(--hairline);
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow .2s, transform .2s;
+    cursor: pointer;
+  }
+  .card:hover {
+    box-shadow: 0 10px 28px rgba(27,27,27,0.08);
+    transform: translateY(-2px);
+  }
+  .card figure {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    background: var(--wall);
+    overflow: hidden;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .card figure img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .card figure .count {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    background: rgba(27,27,27,0.78);
+    color: #fff;
+    font-size: 11px;
+    padding: 2px 9px;
+    border-radius: 999px;
+    letter-spacing: 0.06em;
+  }
+  /* 展示プレート部分 */
+  .placard {
+    padding: 18px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+  }
+  .placard .meta {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    color: var(--sub);
+  }
+  .placard .meta .no { font-family: var(--mono); }
+  .placard .meta .kind {
+    color: var(--seal);
+    font-weight: 700;
+  }
+  .placard h2 {
+    font-family: var(--mincho);
+    font-weight: 600;
+    font-size: 18px;
+    letter-spacing: 0.05em;
+    line-height: 1.5;
+  }
+  .placard .desc {
+    font-size: 12.5px;
+    color: var(--sub);
+    line-height: 1.75;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .snippet {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    background: var(--wall);
+    border: 1px solid var(--hairline);
+    padding: 10px 12px;
+    color: #4A463F;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .card-actions {
+    margin-top: auto;
+    padding-top: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .copybtn {
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: #fff;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    padding: 7px 16px;
+    border-radius: 2px;
+    transition: background .15s, border-color .15s;
+  }
+  .copybtn:hover { background: var(--seal); border-color: var(--seal); }
+  .openlink {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    border-bottom: 1px solid var(--ink);
+    padding-bottom: 1px;
+  }
+  .openlink::after { content: " →"; }
+  .cardtags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .cardtags span {
+    font-size: 10.5px;
+    color: #B8B4AC;
+    letter-spacing: 0.04em;
+  }
+
+  /* ---------- モーダル：白いライトボックス ---------- */
+  .modal {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: rgba(252,252,250,0.97);
+    display: none;
+    overflow-y: auto;
+  }
+  .modal.open { display: block; }
+  .modal-inner {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 64px 24px 80px;
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap: 40px;
+    align-items: start;
+  }
+  .modal-close {
+    position: fixed;
+    top: 18px;
+    right: 22px;
+    width: 44px; height: 44px;
+    border: 1px solid var(--hairline);
+    background: var(--paper);
+    border-radius: 50%;
+    font-size: 18px;
+    line-height: 1;
+  }
+  .modal-close:hover { border-color: var(--ink); }
+  .modal-figure img {
+    width: 100%;
+    display: block;
+    border: 1px solid var(--hairline);
+    background: var(--wall);
+  }
+  .thumbs {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .thumbs button {
+    width: 56px; height: 56px;
+    border: 1px solid var(--hairline);
+    background: var(--wall);
+    padding: 0;
+    overflow: hidden;
+  }
+  .thumbs button.on { border-color: var(--seal); }
+  .thumbs img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .modal-placard .meta {
+    display: flex;
+    gap: 12px;
+    font-size: 11.5px;
+    letter-spacing: 0.16em;
+    color: var(--sub);
+    margin-bottom: 14px;
+  }
+  .modal-placard .meta .kind { color: var(--seal); font-weight: 700; }
+  .modal-placard h2 {
+    font-family: var(--mincho);
+    font-weight: 600;
+    font-size: 27px;
+    letter-spacing: 0.06em;
+    line-height: 1.45;
+    margin-bottom: 14px;
+  }
+  .modal-placard .desc {
+    font-size: 13.5px;
+    color: var(--sub);
+    margin-bottom: 20px;
+    white-space: pre-wrap;
+  }
+  .modal-placard pre {
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.7;
+    background: var(--wall);
+    border: 1px solid var(--hairline);
+    padding: 16px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 320px;
+    overflow-y: auto;
+    margin-bottom: 16px;
+  }
+  .modal-placard .row {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+  .modal-placard .cardtags span { font-size: 11.5px; }
+  .modal-date {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: #B8B4AC;
+    margin-top: 22px;
+  }
+
+  /* ---------- トースト ---------- */
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 32px;
+    transform: translateX(-50%) translateY(10px);
+    background: var(--ink);
+    color: #fff;
+    font-size: 12.5px;
+    letter-spacing: 0.1em;
+    padding: 10px 26px;
+    border-radius: 999px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s, transform .2s;
+    z-index: 99;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  footer {
+    border-top: 1px solid var(--hairline);
+    text-align: center;
+    padding: 32px 24px 44px;
+    font-size: 11.5px;
+    letter-spacing: 0.14em;
+    color: var(--sub);
+  }
+
+  @media (max-width: 720px) {
+    header { padding: 56px 20px 36px; }
+    .modal-inner { grid-template-columns: 1fr; padding: 70px 20px 60px; }
+    .grid { gap: 28px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">AI Manga Creator's Collection</p>
+  <div class="title-row">
+    <h1>タダオの道具箱</h1>
+    <span class="seal" aria-hidden="true">道</span>
+  </div>
+  <p class="lede">AIマンガ家タダオの常設展。生成プロンプト、GASのコード、Webアプリ、そしてマンガ作品を一堂に収蔵しています。</p>
+</header>
+
+<nav class="filters" aria-label="展示区分">
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <div class="tagbar" id="tagbar"></div>
+</nav>
+
+<main>
+  <div class="status" id="status">収蔵品を準備しています…</div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<footer>TADAO'S TOOLBOX — PERMANENT COLLECTION</footer>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true">
+  <button class="modal-close" id="modalClose" aria-label="閉じる">✕</button>
+  <div class="modal-inner" id="modalInner"></div>
+</div>
+
+<div class="toast" id="toast">コピーしました</div>
+
+<script>
+// ================= 設定 =================
+const API_URL = 'https://script.google.com/macros/s/AKfycbzcPEbKXk8jthyQkEogZlgRV19X2yg77km7zlsBqoljkPiv_EYFDDcRbagaxayWwETs5Q/exec';
+
+const TYPES = {
+  all:    { label: 'すべて' },
+  prompt: { label: 'プロンプト' },
+  gas:    { label: 'GAS' },
+  webapp: { label: 'Webアプリ' },
+  manga:  { label: 'マンガ' }
+};
+
+// ================= 状態 =================
+let items = [];
+let currentType = 'all';
+let currentTag = null;
+
+// ================= ユーティリティ =================
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
 }
 
-// --------------------------------------------
-// 書き込みAPI（新規追加）
-// 投稿フォームからのデータをシートに1行追加します
-// --------------------------------------------
-function doPost(e) {
-  try {
-    // フォームから送られたJSONを読み取る
-    const data = JSON.parse(e.postData.contents);
-
-    // ① 合言葉チェック（不一致なら何もせず拒否）
-    if (data.secret !== SECRET) {
-      return jsonResponse({ ok: false, error: '合言葉が違います' });
-    }
-
-    // ② 必須項目チェック
-    if (!data.type || !data.title) {
-      return jsonResponse({ ok: false, error: '種類とタイトルは必須です' });
-    }
-
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
-    if (!sheet) {
-      return jsonResponse({ ok: false, error: 'シートが見つかりません' });
-    }
-
-    // ③ 同時書き込み防止のカギをかける
-    const lock = LockService.getScriptLock();
-    lock.waitLock(10000);
-
-    try {
-      // ④ 新しい番号を自動採番（今ある最大id + 1）
-      const lastRow = sheet.getLastRow();
-      let nextId = 1;
-      if (lastRow >= 2) {
-        const ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues()
-          .map(function(r) { return Number(r[0]) || 0; });
-        nextId = Math.max.apply(null, ids) + 1;
-      }
-
-      // ⑤ 画像リンクの整理：Drive共有リンク → 表示用URLに変換
-      //    元のリンクはimage_source列にそのまま保管（復旧用の保険）
-      const sourceLinks = String(data.images || '')
-        .split(/[\n,]/)
-        .map(function(s) { return s.trim(); })
-        .filter(function(s) { return s; });
-      const displayLinks = sourceLinks.map(toDisplayUrl);
-
-      // ⑥ シートに1行追加
-      sheet.appendRow([
-        nextId,
-        String(data.type),
-        String(data.title),
-        String(data.description || ''),
-        String(data.content || ''),
-        String(data.url || ''),
-        displayLinks.join(','),
-        sourceLinks.join(','),
-        String(data.tags || ''),
-        new Date()
-      ]);
-
-      return jsonResponse({ ok: true, id: nextId });
-    } finally {
-      lock.releaseLock();
-    }
-  } catch (err) {
-    return jsonResponse({ ok: false, error: String(err) });
-  }
-}
-
-// --------------------------------------------
-// Drive共有リンクを画像表示用URLに変換する関数
-// 例: drive.google.com/file/d/XXXX/view
-//  → drive.google.com/thumbnail?id=XXXX&sz=w1600
-// Driveのリンクでなければそのまま返します
-// --------------------------------------------
+// Driveの共有リンクを表示用URLに変換（手貼り対策の保険）
 function toDisplayUrl(u) {
+  u = u.trim();
   let m = u.match(/drive\.google\.com\/file\/d\/([\w-]+)/);
-  if (!m) m = u.match(/[?&]id=([\w-]+)/);
+  if (!m) m = u.match(/drive\.google\.com\/(?:open|uc|thumbnail)\?.*?id=([\w-]+)/);
   if (m) return 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w1600';
   return u;
 }
 
-// JSONを返すための共通関数
-function jsonResponse(data) {
-  return ContentService
-    .createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
+function imagesOf(item) {
+  return String(item.image_url || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean)
+    .map(toDisplayUrl);
 }
 
-// --------------------------------------------
-// （参考）初期化関数：STEP 1で実行済みなら再実行は不要です
-// 実行するとシートがサンプルデータでリセットされるので注意
-// --------------------------------------------
-function setup() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sheet = ss.getSheetByName(SHEET_NAME);
-  if (!sheet) sheet = ss.insertSheet(SHEET_NAME);
-  sheet.clear();
-  sheet.appendRow([
-    'id', 'type', 'title', 'description', 'content',
-    'url', 'image_url', 'image_source', 'tags', 'created_at'
-  ]);
-  sheet.appendRow([1, 'prompt', 'DAOちゃん基本プロンプト', 'キャラクターの基本設定用。表情やポーズは後ろに足して使う', '1girl, dao-chan, short hair, smile, simple background', '', '', '', '#DAOちゃん,#プロンプト', new Date()]);
-  sheet.appendRow([2, 'gas', 'カレンダー→LINE通知', 'Googleカレンダーの予定を家族のLINEに通知。Webhookは302問題があるためbroadcast APIを使うのが正解', 'function notifyLine() { /* コード本文をここに */ }', '', '', '', '#GAS,#LINE,#家族', new Date()]);
-  sheet.appendRow([3, 'webapp', 'こしき号ツアーLP', 'Koshikiブリュワリーのキッチンカー全国ツアー報告ページ', '', 'https://tadao3086.github.io/koshiki-tour-report/', '', '', '#Koshiki,#LP', new Date()]);
-  sheet.appendRow([4, 'manga', 'AIマンガ作品サンプル', 'NanobananaProで作成した1ページマンガ', '', '', 'https://example.com/sample.png', '', '#AIマンガ', new Date()]);
+function tagsOf(item) {
+  return String(item.tags || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
 }
+
+function fmtDate(v) {
+  const d = new Date(v);
+  if (isNaN(d)) return '';
+  return d.getFullYear() + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + String(d.getDate()).padStart(2,'0');
+}
+
+function itemNo(item) {
+  return 'No.' + String(item.id).padStart(3, '0');
+}
+
+// ================= データ取得 =================
+async function load() {
+  const status = document.getElementById('status');
+  try {
+    const res = await fetch(API_URL);
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'unknown');
+    items = data.items.filter(it => it.title);
+    status.style.display = 'none';
+    renderTabs();
+    renderTags();
+    renderGrid();
+  } catch (e) {
+    status.innerHTML = '収蔵品を読み込めませんでした。' +
+      '<span class="err-hint">GASのデプロイ設定（アクセスできるユーザー：全員）と、通信環境をご確認ください。</span>';
+  }
+}
+
+// ================= 描画 =================
+function renderTabs() {
+  const tabs = document.getElementById('tabs');
+  tabs.innerHTML = Object.entries(TYPES).map(([key, t]) => {
+    const n = key === 'all' ? items.length : items.filter(i => i.type === key).length;
+    return '<button class="tab" role="tab" data-type="' + key + '" aria-selected="' + (key === currentType) + '">'
+      + esc(t.label) + ' <span class="num">' + n + '</span></button>';
+  }).join('');
+  tabs.querySelectorAll('.tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentType = btn.dataset.type;
+      currentTag = null;
+      renderTabs(); renderTags(); renderGrid();
+    });
+  });
+}
+
+function renderTags() {
+  const bar = document.getElementById('tagbar');
+  const pool = currentType === 'all' ? items : items.filter(i => i.type === currentType);
+  const tags = [...new Set(pool.flatMap(tagsOf))];
+  bar.innerHTML = tags.map(t =>
+    '<button class="tagchip' + (t === currentTag ? ' on' : '') + '" data-tag="' + esc(t) + '">' + esc(t) + '</button>'
+  ).join('');
+  bar.querySelectorAll('.tagchip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentTag = (currentTag === btn.dataset.tag) ? null : btn.dataset.tag;
+      renderTags(); renderGrid();
+    });
+  });
+}
+
+function visibleItems() {
+  return items.filter(i =>
+    (currentType === 'all' || i.type === currentType) &&
+    (!currentTag || tagsOf(i).includes(currentTag))
+  );
+}
+
+function cardHTML(item, idx) {
+  const imgs = imagesOf(item);
+  const kind = (TYPES[item.type] || { label: item.type }).label;
+  let fig = '';
+  if (imgs.length) {
+    fig = '<figure><img loading="lazy" src="' + esc(imgs[0]) + '" alt="' + esc(item.title) + '">'
+      + (imgs.length > 1 ? '<span class="count">' + imgs.length + '枚</span>' : '')
+      + '</figure>';
+  }
+  let body = '';
+  if ((item.type === 'prompt' || item.type === 'gas') && item.content) {
+    body = '<div class="snippet">' + esc(item.content) + '</div>';
+  }
+  let actions = '<div class="card-actions">';
+  if ((item.type === 'prompt' || item.type === 'gas') && item.content) {
+    const what = item.type === 'prompt' ? 'プロンプトをコピー' : 'コードをコピー';
+    actions += '<button class="copybtn" data-copy="' + idx + '">' + what + '</button>';
+  }
+  if (item.url) {
+    actions += '<a class="openlink" href="' + esc(item.url) + '" target="_blank" rel="noopener" data-stop>開く</a>';
+  }
+  actions += '</div>';
+
+  return '<article class="card" data-idx="' + idx + '" tabindex="0" role="button" aria-label="' + esc(item.title) + ' の詳細">'
+    + fig
+    + '<div class="placard">'
+    +   '<div class="meta"><span class="no">' + itemNo(item) + '</span><span class="kind">' + esc(kind) + '</span></div>'
+    +   '<h2>' + esc(item.title) + '</h2>'
+    +   (item.description ? '<p class="desc">' + esc(item.description) + '</p>' : '')
+    +   body
+    +   '<div class="cardtags">' + tagsOf(item).map(t => '<span>' + esc(t) + '</span>').join('') + '</div>'
+    +   actions
+    + '</div></article>';
+}
+
+function renderGrid() {
+  const grid = document.getElementById('grid');
+  const vis = visibleItems();
+  if (!vis.length) {
+    grid.innerHTML = '<div class="status" style="grid-column:1/-1">この区分にはまだ収蔵品がありません。</div>';
+    return;
+  }
+  grid.innerHTML = vis.map(it => cardHTML(it, items.indexOf(it))).join('');
+
+  grid.querySelectorAll('.card').forEach(card => {
+    card.addEventListener('click', e => {
+      if (e.target.closest('[data-copy]') || e.target.closest('[data-stop]')) return;
+      openModal(Number(card.dataset.idx));
+    });
+    card.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(Number(card.dataset.idx)); }
+    });
+  });
+  grid.querySelectorAll('[data-copy]').forEach(btn => {
+    btn.addEventListener('click', () => copyText(items[Number(btn.dataset.copy)].content));
+  });
+}
+
+// ================= モーダル =================
+const modal = document.getElementById('modal');
+const modalInner = document.getElementById('modalInner');
+
+function openModal(idx) {
+  const item = items[idx];
+  const imgs = imagesOf(item);
+  const kind = (TYPES[item.type] || { label: item.type }).label;
+
+  let figure = '';
+  if (imgs.length) {
+    figure = '<div class="modal-figure">'
+      + '<img id="modalMain" src="' + esc(imgs[0]) + '" alt="' + esc(item.title) + '">'
+      + (imgs.length > 1
+          ? '<div class="thumbs">' + imgs.map((u, i) =>
+              '<button data-img="' + esc(u) + '" class="' + (i === 0 ? 'on' : '') + '"><img src="' + esc(u) + '" alt=""></button>'
+            ).join('') + '</div>'
+          : '')
+      + '</div>';
+  }
+
+  let inner = '<div class="modal-placard">'
+    + '<div class="meta"><span class="no">' + itemNo(item) + '</span><span class="kind">' + esc(kind) + '</span></div>'
+    + '<h2>' + esc(item.title) + '</h2>'
+    + (item.description ? '<p class="desc">' + esc(item.description) + '</p>' : '');
+
+  if (item.content) {
+    inner += '<pre>' + esc(item.content) + '</pre>'
+      + '<div class="row"><button class="copybtn" id="modalCopy">'
+      + (item.type === 'gas' ? 'コードをコピー' : 'プロンプトをコピー')
+      + '</button></div>';
+  }
+  if (item.url) {
+    inner += '<div class="row"><a class="openlink" href="' + esc(item.url) + '" target="_blank" rel="noopener">サイトを開く</a></div>';
+  }
+  inner += '<div class="cardtags">' + tagsOf(item).map(t => '<span>' + esc(t) + '</span>').join('') + '</div>'
+    + (item.created_at ? '<div class="modal-date">収蔵日 ' + fmtDate(item.created_at) + '</div>' : '')
+    + '</div>';
+
+  modalInner.innerHTML = (figure || '<div></div>') + inner;
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  const copyBtn = document.getElementById('modalCopy');
+  if (copyBtn) copyBtn.addEventListener('click', () => copyText(item.content));
+
+  modalInner.querySelectorAll('.thumbs button').forEach(b => {
+    b.addEventListener('click', () => {
+      document.getElementById('modalMain').src = b.dataset.img;
+      modalInner.querySelectorAll('.thumbs button').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+    });
+  });
+}
+
+function closeModal() {
+  modal.classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.getElementById('modalClose').addEventListener('click', closeModal);
+modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+// ================= コピー =================
+function copyText(text) {
+  const done = () => showToast();
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(done);
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    done();
+  }
+}
+let toastTimer;
+function showToast() {
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+load();
+</script>
+</body>
+</html>
