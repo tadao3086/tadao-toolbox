@@ -1,139 +1,312 @@
-// ============================================
-// タダオの道具箱サイト STEP 3（完全版）
-// 読み取りAPI（doGet）+ 書き込みAPI（doPost）
-//
-// ★最重要★ 下のSECRETを自分だけの合言葉に書き換えてください
-// ============================================
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>新規収蔵 | タダオの道具箱</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #FFFFFF;
+    --wall: #FAF9F7;
+    --ink: #1B1B1B;
+    --sub: #6E6A63;
+    --hairline: #E8E6E1;
+    --seal: #B5342A;
+    --mincho: "Shippori Mincho", "Hiragino Mincho ProN", serif;
+    --gothic: "Zen Kaku Gothic New", "Hiragino Kaku Gothic ProN", sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--gothic);
+    font-size: 15px;
+    line-height: 1.8;
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible { outline: 2px solid var(--seal); outline-offset: 2px; }
 
-const SECRET = 'ここに合言葉を設定';   // ←★必ず書き換える★
-const SHEET_NAME = 'items';
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 64px 24px 96px;
+  }
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.42em;
+    color: var(--sub);
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+  h1 {
+    font-family: var(--mincho);
+    font-weight: 600;
+    font-size: 30px;
+    letter-spacing: 0.12em;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .seal {
+    width: 26px; height: 26px;
+    background: var(--seal);
+    color: #fff;
+    font-family: var(--mincho);
+    font-size: 15px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    transform: rotate(-4deg);
+  }
+  .lede { color: var(--sub); font-size: 13px; margin-bottom: 40px; }
+  .lede a { color: var(--sub); }
 
-// --------------------------------------------
-// 読み取りAPI（STEP 1と同じ。変更なし）
-// --------------------------------------------
-function doGet(e) {
+  .field { margin-bottom: 26px; }
+  label {
+    display: block;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    color: var(--sub);
+    margin-bottom: 8px;
+  }
+  label .req { color: var(--seal); margin-left: 4px; }
+  label .hint {
+    display: block;
+    letter-spacing: 0.04em;
+    font-size: 11.5px;
+    color: #B8B4AC;
+    margin-top: 2px;
+  }
+  input[type="text"], input[type="url"], input[type="password"], select, textarea {
+    width: 100%;
+    border: 1px solid var(--hairline);
+    background: var(--paper);
+    font-family: inherit;
+    font-size: 14.5px;
+    line-height: 1.7;
+    padding: 11px 14px;
+    border-radius: 2px;
+    color: var(--ink);
+    transition: border-color .15s;
+  }
+  textarea { min-height: 110px; resize: vertical; }
+  textarea.code { font-family: var(--mono); font-size: 13px; }
+  input:focus, select:focus, textarea:focus { border-color: var(--ink); outline: none; }
+
+  /* 種類セレクタ：4枚のプレートから選ぶ */
+  .typegrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .typegrid input { position: absolute; opacity: 0; pointer-events: none; }
+  .typegrid label.plate {
+    border: 1px solid var(--hairline);
+    text-align: center;
+    padding: 12px 4px;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    color: var(--sub);
+    cursor: pointer;
+    margin: 0;
+    border-radius: 2px;
+    transition: border-color .15s, color .15s;
+  }
+  .typegrid input:checked + label.plate {
+    border-color: var(--seal);
+    color: var(--seal);
+    font-weight: 700;
+  }
+  .typegrid input:focus-visible + label.plate { outline: 2px solid var(--seal); outline-offset: 2px; }
+
+  .divider {
+    border: none;
+    border-top: 1px solid var(--hairline);
+    margin: 36px 0;
+  }
+
+  .submitrow {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-top: 8px;
+  }
+  .submitbtn {
+    font-family: inherit;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: #fff;
+    font-size: 13.5px;
+    letter-spacing: 0.18em;
+    padding: 13px 38px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+  }
+  .submitbtn:hover { background: var(--seal); border-color: var(--seal); }
+  .submitbtn:disabled { background: #B8B4AC; border-color: #B8B4AC; cursor: wait; }
+
+  .result {
+    margin-top: 26px;
+    padding: 16px 18px;
+    border-radius: 2px;
+    font-size: 13.5px;
+    display: none;
+  }
+  .result.ok {
+    display: block;
+    background: var(--wall);
+    border: 1px solid var(--hairline);
+  }
+  .result.ok .no {
+    font-family: var(--mono);
+    color: var(--seal);
+    font-weight: 700;
+  }
+  .result.ng {
+    display: block;
+    background: #FBF1F0;
+    border: 1px solid #E8C5C1;
+    color: #8A2820;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">New Acquisition</p>
+  <h1>新規収蔵<span class="seal" aria-hidden="true">道</span></h1>
+  <p class="lede">道具箱に新しいアイテムを追加します。送信には合言葉が必要です。<a href="./index.html">← 展示室にもどる</a></p>
+
+  <div class="field">
+    <label>種類<span class="req">＊</span></label>
+    <div class="typegrid" role="radiogroup" aria-label="種類">
+      <input type="radio" name="type" value="prompt" id="t-prompt" checked>
+      <label class="plate" for="t-prompt">プロンプト</label>
+      <input type="radio" name="type" value="gas" id="t-gas">
+      <label class="plate" for="t-gas">GAS</label>
+      <input type="radio" name="type" value="webapp" id="t-webapp">
+      <label class="plate" for="t-webapp">Webアプリ</label>
+      <input type="radio" name="type" value="manga" id="t-manga">
+      <label class="plate" for="t-manga">マンガ</label>
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="f-title">タイトル<span class="req">＊</span></label>
+    <input type="text" id="f-title" placeholder="例：DAOちゃん 喫茶店プロンプト">
+  </div>
+
+  <div class="field">
+    <label for="f-desc">説明<span class="hint">どんな場面向きか、ハマったポイント（原因→対策）などもここに</span></label>
+    <textarea id="f-desc"></textarea>
+  </div>
+
+  <div class="field">
+    <label for="f-content">本文<span class="hint">プロンプト本文、またはGASのコード。コピーボタンの対象になります</span></label>
+    <textarea id="f-content" class="code"></textarea>
+  </div>
+
+  <div class="field">
+    <label for="f-url">リンク<span class="hint">Webアプリや公開ページのURL（なければ空欄でOK）</span></label>
+    <input type="url" id="f-url" placeholder="https://">
+  </div>
+
+  <div class="field">
+    <label for="f-images">画像<span class="hint">Driveの共有リンクをそのまま貼ってOK（1行に1つで複数可）。表示用URLへの変換は自動で行われます</span></label>
+    <textarea id="f-images" class="code" placeholder="https://drive.google.com/file/d/xxxx/view?usp=sharing"></textarea>
+  </div>
+
+  <div class="field">
+    <label for="f-tags">タグ<span class="hint">カンマ区切り。例：#DAOちゃん,#プロンプト</span></label>
+    <input type="text" id="f-tags">
+  </div>
+
+  <hr class="divider">
+
+  <div class="field">
+    <label for="f-secret">合言葉<span class="req">＊</span></label>
+    <input type="password" id="f-secret" autocomplete="off">
+  </div>
+
+  <div class="submitrow">
+    <button class="submitbtn" id="submitBtn">収蔵する</button>
+  </div>
+
+  <div class="result" id="result" role="status"></div>
+</div>
+
+<script>
+// ================= 設定 =================
+const API_URL = 'https://script.google.com/macros/s/AKfycbzcPEbKXk8jthyQkEogZlgRV19X2yg77km7zlsBqoljkPiv_EYFDDcRbagaxayWwETs5Q/exec';
+
+const btn = document.getElementById('submitBtn');
+const result = document.getElementById('result');
+
+btn.addEventListener('click', async () => {
+  const payload = {
+    secret: document.getElementById('f-secret').value,
+    type: document.querySelector('input[name="type"]:checked').value,
+    title: document.getElementById('f-title').value.trim(),
+    description: document.getElementById('f-desc').value.trim(),
+    content: document.getElementById('f-content').value,
+    url: document.getElementById('f-url').value.trim(),
+    images: document.getElementById('f-images').value.trim(),
+    tags: document.getElementById('f-tags').value.trim()
+  };
+
+  // 送信前の簡単なチェック
+  if (!payload.title) { return showResult(false, 'タイトルを入力してください'); }
+  if (!payload.secret) { return showResult(false, '合言葉を入力してください'); }
+
+  btn.disabled = true;
+  btn.textContent = '収蔵中…';
+  result.className = 'result';
+
   try {
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
-    if (!sheet) {
-      return jsonResponse({ ok: false, error: 'シートが見つかりません。先にsetup()を実行してください' });
-    }
-    const values = sheet.getDataRange().getValues();
-    const headers = values.shift();
-    const items = values.map(function(row) {
-      const obj = {};
-      headers.forEach(function(h, i) { obj[h] = row[i]; });
-      return obj;
+    // CORS回避のためtext/plainで送信（GAS連携の定石）
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
     });
-    return jsonResponse({ ok: true, count: items.length, items: items });
-  } catch (err) {
-    return jsonResponse({ ok: false, error: String(err) });
+    const data = await res.json();
+
+    if (data.ok) {
+      showResult(true, '<span class="no">No.' + String(data.id).padStart(3, '0') + '</span> として収蔵しました。展示室を再読み込みすると表示されます。');
+      clearForm();
+    } else {
+      showResult(false, '収蔵できませんでした：' + (data.error || '原因不明のエラー'));
+    }
+  } catch (e) {
+    showResult(false, '通信エラーです。ネット接続と、GASのデプロイ設定（アクセス：全員）を確認してください。');
   }
+
+  btn.disabled = false;
+  btn.textContent = '収蔵する';
+});
+
+function showResult(ok, html) {
+  result.className = 'result ' + (ok ? 'ok' : 'ng');
+  result.innerHTML = html;
 }
 
-// --------------------------------------------
-// 書き込みAPI（新規追加）
-// 投稿フォームからのデータをシートに1行追加します
-// --------------------------------------------
-function doPost(e) {
-  try {
-    // フォームから送られたJSONを読み取る
-    const data = JSON.parse(e.postData.contents);
-
-    // ① 合言葉チェック（不一致なら何もせず拒否）
-    if (data.secret !== SECRET) {
-      return jsonResponse({ ok: false, error: '合言葉が違います' });
-    }
-
-    // ② 必須項目チェック
-    if (!data.type || !data.title) {
-      return jsonResponse({ ok: false, error: '種類とタイトルは必須です' });
-    }
-
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
-    if (!sheet) {
-      return jsonResponse({ ok: false, error: 'シートが見つかりません' });
-    }
-
-    // ③ 同時書き込み防止のカギをかける
-    const lock = LockService.getScriptLock();
-    lock.waitLock(10000);
-
-    try {
-      // ④ 新しい番号を自動採番（今ある最大id + 1）
-      const lastRow = sheet.getLastRow();
-      let nextId = 1;
-      if (lastRow >= 2) {
-        const ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues()
-          .map(function(r) { return Number(r[0]) || 0; });
-        nextId = Math.max.apply(null, ids) + 1;
-      }
-
-      // ⑤ 画像リンクの整理：Drive共有リンク → 表示用URLに変換
-      //    元のリンクはimage_source列にそのまま保管（復旧用の保険）
-      const sourceLinks = String(data.images || '')
-        .split(/[\n,]/)
-        .map(function(s) { return s.trim(); })
-        .filter(function(s) { return s; });
-      const displayLinks = sourceLinks.map(toDisplayUrl);
-
-      // ⑥ シートに1行追加
-      sheet.appendRow([
-        nextId,
-        String(data.type),
-        String(data.title),
-        String(data.description || ''),
-        String(data.content || ''),
-        String(data.url || ''),
-        displayLinks.join(','),
-        sourceLinks.join(','),
-        String(data.tags || ''),
-        new Date()
-      ]);
-
-      return jsonResponse({ ok: true, id: nextId });
-    } finally {
-      lock.releaseLock();
-    }
-  } catch (err) {
-    return jsonResponse({ ok: false, error: String(err) });
-  }
+function clearForm() {
+  ['f-title', 'f-desc', 'f-content', 'f-url', 'f-images', 'f-tags'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  // 合言葉は連続投稿しやすいよう残します
 }
-
-// --------------------------------------------
-// Drive共有リンクを画像表示用URLに変換する関数
-// 例: drive.google.com/file/d/XXXX/view
-//  → drive.google.com/thumbnail?id=XXXX&sz=w1600
-// Driveのリンクでなければそのまま返します
-// --------------------------------------------
-function toDisplayUrl(u) {
-  let m = u.match(/drive\.google\.com\/file\/d\/([\w-]+)/);
-  if (!m) m = u.match(/[?&]id=([\w-]+)/);
-  if (m) return 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w1600';
-  return u;
-}
-
-// JSONを返すための共通関数
-function jsonResponse(data) {
-  return ContentService
-    .createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-// --------------------------------------------
-// （参考）初期化関数：STEP 1で実行済みなら再実行は不要です
-// 実行するとシートがサンプルデータでリセットされるので注意
-// --------------------------------------------
-function setup() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sheet = ss.getSheetByName(SHEET_NAME);
-  if (!sheet) sheet = ss.insertSheet(SHEET_NAME);
-  sheet.clear();
-  sheet.appendRow([
-    'id', 'type', 'title', 'description', 'content',
-    'url', 'image_url', 'image_source', 'tags', 'created_at'
-  ]);
-  sheet.appendRow([1, 'prompt', 'DAOちゃん基本プロンプト', 'キャラクターの基本設定用。表情やポーズは後ろに足して使う', '1girl, dao-chan, short hair, smile, simple background', '', '', '', '#DAOちゃん,#プロンプト', new Date()]);
-  sheet.appendRow([2, 'gas', 'カレンダー→LINE通知', 'Googleカレンダーの予定を家族のLINEに通知。Webhookは302問題があるためbroadcast APIを使うのが正解', 'function notifyLine() { /* コード本文をここに */ }', '', '', '', '#GAS,#LINE,#家族', new Date()]);
-  sheet.appendRow([3, 'webapp', 'こしき号ツアーLP', 'Koshikiブリュワリーのキッチンカー全国ツアー報告ページ', '', 'https://tadao3086.github.io/koshiki-tour-report/', '', '', '#Koshiki,#LP', new Date()]);
-  sheet.appendRow([4, 'manga', 'AIマンガ作品サンプル', 'NanobananaProで作成した1ページマンガ', '', '', 'https://example.com/sample.png', '', '#AIマンガ', new Date()]);
-}
+</script>
+</body>
+</html>
