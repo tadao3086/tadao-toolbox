@@ -1,0 +1,139 @@
+// ============================================
+// タダオの道具箱サイト STEP 3（完全版）
+// 読み取りAPI（doGet）+ 書き込みAPI（doPost）
+//
+// ★最重要★ 下のSECRETを自分だけの合言葉に書き換えてください
+// ============================================
+
+const SECRET = 'ここに合言葉を設定';   // ←★必ず書き換える★
+const SHEET_NAME = 'items';
+
+// --------------------------------------------
+// 読み取りAPI（STEP 1と同じ。変更なし）
+// --------------------------------------------
+function doGet(e) {
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+    if (!sheet) {
+      return jsonResponse({ ok: false, error: 'シートが見つかりません。先にsetup()を実行してください' });
+    }
+    const values = sheet.getDataRange().getValues();
+    const headers = values.shift();
+    const items = values.map(function(row) {
+      const obj = {};
+      headers.forEach(function(h, i) { obj[h] = row[i]; });
+      return obj;
+    });
+    return jsonResponse({ ok: true, count: items.length, items: items });
+  } catch (err) {
+    return jsonResponse({ ok: false, error: String(err) });
+  }
+}
+
+// --------------------------------------------
+// 書き込みAPI（新規追加）
+// 投稿フォームからのデータをシートに1行追加します
+// --------------------------------------------
+function doPost(e) {
+  try {
+    // フォームから送られたJSONを読み取る
+    const data = JSON.parse(e.postData.contents);
+
+    // ① 合言葉チェック（不一致なら何もせず拒否）
+    if (data.secret !== SECRET) {
+      return jsonResponse({ ok: false, error: '合言葉が違います' });
+    }
+
+    // ② 必須項目チェック
+    if (!data.type || !data.title) {
+      return jsonResponse({ ok: false, error: '種類とタイトルは必須です' });
+    }
+
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+    if (!sheet) {
+      return jsonResponse({ ok: false, error: 'シートが見つかりません' });
+    }
+
+    // ③ 同時書き込み防止のカギをかける
+    const lock = LockService.getScriptLock();
+    lock.waitLock(10000);
+
+    try {
+      // ④ 新しい番号を自動採番（今ある最大id + 1）
+      const lastRow = sheet.getLastRow();
+      let nextId = 1;
+      if (lastRow >= 2) {
+        const ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues()
+          .map(function(r) { return Number(r[0]) || 0; });
+        nextId = Math.max.apply(null, ids) + 1;
+      }
+
+      // ⑤ 画像リンクの整理：Drive共有リンク → 表示用URLに変換
+      //    元のリンクはimage_source列にそのまま保管（復旧用の保険）
+      const sourceLinks = String(data.images || '')
+        .split(/[\n,]/)
+        .map(function(s) { return s.trim(); })
+        .filter(function(s) { return s; });
+      const displayLinks = sourceLinks.map(toDisplayUrl);
+
+      // ⑥ シートに1行追加
+      sheet.appendRow([
+        nextId,
+        String(data.type),
+        String(data.title),
+        String(data.description || ''),
+        String(data.content || ''),
+        String(data.url || ''),
+        displayLinks.join(','),
+        sourceLinks.join(','),
+        String(data.tags || ''),
+        new Date()
+      ]);
+
+      return jsonResponse({ ok: true, id: nextId });
+    } finally {
+      lock.releaseLock();
+    }
+  } catch (err) {
+    return jsonResponse({ ok: false, error: String(err) });
+  }
+}
+
+// --------------------------------------------
+// Drive共有リンクを画像表示用URLに変換する関数
+// 例: drive.google.com/file/d/XXXX/view
+//  → drive.google.com/thumbnail?id=XXXX&sz=w1600
+// Driveのリンクでなければそのまま返します
+// --------------------------------------------
+function toDisplayUrl(u) {
+  let m = u.match(/drive\.google\.com\/file\/d\/([\w-]+)/);
+  if (!m) m = u.match(/[?&]id=([\w-]+)/);
+  if (m) return 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w1600';
+  return u;
+}
+
+// JSONを返すための共通関数
+function jsonResponse(data) {
+  return ContentService
+    .createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// --------------------------------------------
+// （参考）初期化関数：STEP 1で実行済みなら再実行は不要です
+// 実行するとシートがサンプルデータでリセットされるので注意
+// --------------------------------------------
+function setup() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) sheet = ss.insertSheet(SHEET_NAME);
+  sheet.clear();
+  sheet.appendRow([
+    'id', 'type', 'title', 'description', 'content',
+    'url', 'image_url', 'image_source', 'tags', 'created_at'
+  ]);
+  sheet.appendRow([1, 'prompt', 'DAOちゃん基本プロンプト', 'キャラクターの基本設定用。表情やポーズは後ろに足して使う', '1girl, dao-chan, short hair, smile, simple background', '', '', '', '#DAOちゃん,#プロンプト', new Date()]);
+  sheet.appendRow([2, 'gas', 'カレンダー→LINE通知', 'Googleカレンダーの予定を家族のLINEに通知。Webhookは302問題があるためbroadcast APIを使うのが正解', 'function notifyLine() { /* コード本文をここに */ }', '', '', '', '#GAS,#LINE,#家族', new Date()]);
+  sheet.appendRow([3, 'webapp', 'こしき号ツアーLP', 'Koshikiブリュワリーのキッチンカー全国ツアー報告ページ', '', 'https://tadao3086.github.io/koshiki-tour-report/', '', '', '#Koshiki,#LP', new Date()]);
+  sheet.appendRow([4, 'manga', 'AIマンガ作品サンプル', 'NanobananaProで作成した1ページマンガ', '', '', 'https://example.com/sample.png', '', '#AIマンガ', new Date()]);
+}
