@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>投資初心者「やってはいけない」チェックリスト</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Noto+Sans+JP:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>投資初心者<br><span class="accent">やってはいけないこと</span><br>10選チェックリスト</h1>
+            <p class="intro">当てはまる項目をチェックしてください。<br>あなたの「投資体質」を診断します。</p>
+        </header>
+
+        <main>
+            <form id="checklistForm">
+                <div class="checklist-container">
+                    <label class="checklist-item">
+                        <input type="checkbox" name="mistake" value="short_term">
+                        <span class="custom-checkbox"></span>
+                        <span class="icon">🎰</span>
+                        <div class="text-content">
+                            <h3>短期で大金狙い</h3>
+                            <p>短期間で一攫千金を狙うと失敗しやすい</p>
+                        </div>
+                    </label>
+
+                    <label class="checklist-item">
+                        <input type="checkbox" name="mistake" value="panic_sell">
+                        <span class="custom-checkbox"></span>
+                        <span class="icon">📉</span>
+                        <div class="text-content">
+                            <h3>暴落で狼狽売り</h3>
+                            <p>相場回復の恩恵を受けられない場合がある</p>
+                        </div>
+                    </label>
+
+                    <label class="checklist-item">
+                        <input type="checkbox" name="mistake" value="ignore_cost">
+                        <span class="custom-checkbox"></span>
+                        <span class="icon">💸</span>
+                        <div class="text-content">
+                            <h3>税金・手数料を軽視</h3>
+                            <p>手取りは減ります。コスト意識を忘れずに</p>
+                        </div>
+                    </label>
+
+                    <label class="checklist-item">
+                        <input type="checkbox" name="mistake" value="living_fund">
+                        <span class="custom-checkbox"></span>
+                        <span class="icon">🍚</span>
+                        <div class="text-content">
+                            <h3>生活資金で投資</h3>
+                            <p>必要なお金を投資に使うと生活に困ることになる</p>
+                        </div>
+                    </label>
+
+                    <label class="checklist-item">
+                        <input type="checkbox" name="mistake" value="debt">
+                        <span class="custom-checkbox"></span>
+                        <span class="icon">💳</span>
+                        <div class="text-content">
+                            <h3>借金で投資</h3>
+                            <p>損失が膨らめば返済不能になるリスクがあります</p>
+                        </div>
+                    </label>
+
+                    <label class="checklist-item">
+                        <input type="checkbox" name="mistake" value="emotional">
+                        <span class="custom-checkbox"></span>
+                        <span class="icon">🎢</span>
+                        <div class="text-content">
+                            <h3>感情的売買</h3>
+                            <p>焦って売買すると失敗しやすい。マイルールが大事</p>
+                        </div>
+                    </label>
+
+                    <label class="checklist-item">
+                        <input type="checkbox" name="mistake" value="rumors">
+                        <span class="custom-checkbox"></span>
+                        <span class="icon">🗣️</span>
+                        <div class="text-content">
+                            <h3>情報に流される</h3>
+                            <p>SNSやネットの噂で「今が買い！」と飛びつくのは危険</p>
+                        </div>
+                    </label>
+
+                    <label class="checklist-item">
+                        <input type="checkbox" name="mistake" value="concentration">
+                        <span class="custom-checkbox"></span>
+                        <span class="icon">🥚</span>
+                        <div class="text-content">
+                            <h3>一極集中</h3>
+                            <p>大きなリターンも狙える反面、失敗すれば資産が一気に減る</p>
+                        </div>
+                    </label>
+
+                    <label class="checklist-item">
+                        <input type="checkbox" name="mistake" value="over_diversify">
+                        <span class="custom-checkbox"></span>
+                        <span class="icon">🥘</span>
+                        <div class="text-content">
+                            <h3>分散しすぎ</h3>
+                            <p>リターンが薄くなり、管理も複雑化する</p>
+                        </div>
+                    </label>
+
+                    <label class="checklist-item">
+                        <input type="checkbox" name="mistake" value="no_risk_understanding">
+                        <span class="custom-checkbox"></span>
+                        <span class="icon">🙈</span>
+                        <div class="text-content">
+                            <h3>リスク無理解</h3>
+                            <p>仕組みを理解せずに買うのはNG</p>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="button-area">
+                    <button type="button" id="diagnoseBtn">診断する</button>
+                </div>
+            </form>
+
+            <div id="resultArea" class="result-area hidden">
+                <div class="score-card">
+                    <h2>診断結果</h2>
+                    <div class="score-display">
+                        <span class="label">該当数</span>
+                        <span id="scoreCount" class="count">0</span>
+                        <span class="total">/ 10</span>
+                    </div>
+                    <h3 id="resultTitle" class="result-title"></h3>
+                    <p id="resultDesc" class="result-desc"></p>
+                </div>
+
+                <div id="adviceContainer" class="advice-container hidden">
+                    <h3>💡 あなたへのアドバイス</h3>
+                    <ul id="adviceList"></ul>
+                </div>
+
+                <button type="button" id="retryBtn" class="secondary-btn">もう一度チェックする</button>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2026 Investment Checklist App</p>
+        </footer>
+    </div>
+    <script src="script.js"></script>
+</body>
+
+</html>
