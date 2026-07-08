@@ -145,5 +145,16 @@ window.COLLECTION = [
     image_url: "",
     tags: "#アプリ,#マンガ制作",
     created_at: "2026-07-08"
+  },
+  {
+    id: 17,
+    type: "webapp",
+    title: "ポップアップ絵本工房",
+    description: "『クリプトニンジャ咲耶』を題材に、ポップアップ絵本風イラストの生成プロンプトとストーリーをステップ式で設計・自動生成するクリエイティブツール。※非公式のファンアート（二次創作）ツールです",
+    content: "",
+    url: "https://picturebook-generator-phi.vercel.app/",
+    image_url: "",
+    tags: "#アプリ,#ファンアート,#絵本,#AI画像",
+    created_at: "2026-07-08"
   }
 ];
