@@ -79,5 +79,38 @@ window.COLLECTION = [
     image_url: "",
     tags: "#アプリ,#画像生成",
     created_at: "2026-07-08"
+  },
+  {
+    id: 11,
+    type: "webapp",
+    title: "Brain Launchpad Navigator v2",
+    description: "AIを活用して最初のBrainコンテンツを7日間で販売開始するための実践ロードマップ。通常ビジネス向けと「創作・マンガ特化」を切り替えられるモードスイッチつき",
+    content: "",
+    url: "apps/brain-launchpad-navigator/index.html",
+    image_url: "",
+    tags: "#アプリ,#Brain,#ロードマップ",
+    created_at: "2026-07-08"
+  },
+  {
+    id: 12,
+    type: "webapp",
+    title: "AI Image Asset Navigator",
+    description: "AI画像を「作って楽しむもの」から「使って価値を生む資産」に変える30日間ロードマップの進捗と、作成アセットを管理するダッシュボード",
+    content: "",
+    url: "apps/ai-image-asset-navigator/index.html",
+    image_url: "",
+    tags: "#アプリ,#AI画像,#ロードマップ",
+    created_at: "2026-07-08"
+  },
+  {
+    id: 13,
+    type: "webapp",
+    title: "投資初心者「やってはいけない」チェックリスト",
+    description: "投資初心者が避けるべき10の失敗パターンをチェックすると、投資体質を自動診断して改善アクションを提示するシミュレーター",
+    content: "",
+    url: "apps/investment-checklist/index.html",
+    image_url: "",
+    tags: "#アプリ,#投資,#チェックリスト",
+    created_at: "2026-07-08"
   }
 ];

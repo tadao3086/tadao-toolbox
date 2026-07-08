@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brain Launchpad Navigator v2 - 7日間で最初のBrainを販売開始するロードマップ</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- FontAwesome for Premium Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-section">
+        <h1><i class="fa-solid fa-rocket"></i> Brain Launchpad Navigator <span class="version-badge">v2.0</span></h1>
+        <p>AIを活用して、最初のBrainを7日間で販売開始する実践ロードマップ</p>
+      </div>
+      <div class="header-controls">
+        
+        <!-- Mode Switch Toggle -->
+        <div class="mode-switch-wrapper">
+          <span class="mode-label normal-label active">通常ビジネス実用</span>
+          <label class="switch">
+            <input type="checkbox" id="mode-toggle">
+            <span class="slider round"></span>
+          </label>
+          <span class="mode-label creative-label">創作・マンガ特化</span>
+        </div>
+
+        <!-- Theme Toggle Button -->
+        <button class="theme-toggle-btn" id="theme-toggle-btn" title="テーマ切り替え">
+          <i class="fa-solid fa-sun" id="theme-icon"></i>
+          <span id="theme-text">Light Mode</span>
+        </button>
+
+        <div class="day-progress-wrapper">
+          <span class="progress-title">LAUNCH READY STATUS:</span>
+          <div class="day-progress-bar-container">
+            <div class="day-progress-bar" id="global-progress-bar"></div>
+          </div>
+          <span class="day-progress-text" id="global-progress-text">0%</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Grid -->
+    <div class="workspace-grid">
+      
+      <!-- Left Column: Sidebar -->
+      <aside class="sidebar">
+        
+        <!-- Progress Circular Indicator -->
+        <div class="glass-card progress-card">
+          <h3 class="progress-header">全体進捗率</h3>
+          <div class="circular-progress-container">
+            <svg class="circular-progress">
+              <circle class="bg-circle" cx="70" cy="70" r="60"></circle>
+              <circle class="fg-circle" id="global-circle-progress" cx="70" cy="70" r="60" stroke-dasharray="377" stroke-dashoffset="377"></circle>
+            </svg>
+            <div class="progress-value" id="global-circle-text">0%</div>
+          </div>
+          <div class="progress-stats" id="global-stats-text">0 / 40 タスク完了</div>
+        </div>
+
+        <!-- Navigation Days -->
+        <div class="glass-card">
+          <h3 class="progress-header" style="margin-bottom: 1rem; font-size: 0.95rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem;">
+            <i class="fa-solid fa-calendar-days"></i> ロードマップ一覧
+          </h3>
+          <ul class="days-nav" id="days-nav-list">
+            <!-- 動的に生成されます -->
+          </ul>
+        </div>
+
+        <!-- Premium Resource & Bonuses Card -->
+        <div class="glass-card resource-card">
+          <h3 class="progress-header resource-header">
+            <i class="fa-solid fa-gift"></i> 購入者限定アセット・特典
+          </h3>
+          <ul class="resource-links">
+            <li>
+              <a href="https://chatgpt.com/g/g-6a1824ac942c8191bf5da4b124da5a37-brainchu-fan-mai-rotomatuhugpts" target="_blank" class="resource-link-item">
+                <span class="resource-emoji">🤖</span>
+                <div class="resource-text">
+                  <div class="resource-title">初販売ロードマップGPTs</div>
+                  <div class="resource-desc">7日間の進捗をAIが完全伴走</div>
+                </div>
+              </a>
+            </li>
+            <li>
+              <a href="https://chatgpt.com/g/g-6a3de17665f8819197061058beb2004d-brainqi-hua-shu-meka" target="_blank" class="resource-link-item">
+                <span class="resource-emoji">📝</span>
+                <div class="resource-text">
+                  <div class="resource-title">Brain企画書メーカーGPTs</div>
+                  <div class="resource-desc">一括作成前の企画構成設計に</div>
+                </div>
+              </a>
+            </li>
+            <li>
+              <a href="https://drive.google.com/file/d/1dizxz6ICECcaehBoYUErExCTSMgA-zg5/view?usp=sharing" target="_blank" class="resource-link-item">
+                <span class="resource-emoji">📦</span>
+                <div class="resource-text">
+                  <div class="resource-title">Codex一括作成キット</div>
+                  <div class="resource-desc">本文〜図解生成を一括処理</div>
+                </div>
+              </a>
+            </li>
+            <li class="review-bonus-item">
+              <div class="review-bonus-box">
+                <span class="bonus-tag">レビュー特典</span>
+                <div class="bonus-title">Brain人気記事ジャンル＆キーワード集</div>
+                <div class="bonus-period">（2025年3月〜2026年5月対象）</div>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+      </aside>
+
+      <!-- Right Column: Main Content -->
+      <main class="content-area">
+        
+        <!-- Global Configuration Parameters -->
+        <section class="glass-card parameters-card" id="parameters-section">
+          <div class="parameters-toggle" id="parameters-toggle-btn">
+            <h2><i class="fa-solid fa-sliders"></i> 1. スマートプロンプト共通設定（まず最初に入力してください）</h2>
+            <i class="fa-solid fa-chevron-down toggle-icon" id="parameters-toggle-icon"></i>
+          </div>
+          <div class="parameters-grid">
+            <div class="input-group">
+              <label for="param-theme" id="label-param-theme"><i class="fa-solid fa-lightbulb"></i> 発信テーマ / ジャンル</label>
+              <input type="text" id="param-theme" placeholder="例: AIプロンプトを使った副業, Canvaでつくるサムネデザイン">
+            </div>
+            <div class="input-group">
+              <label for="param-target" id="label-param-target"><i class="fa-solid fa-bullseye"></i> 想定ターゲット読者</label>
+              <input type="text" id="param-target" placeholder="例: Brainを初出品したい副業初心者, デザインが苦手なママ">
+            </div>
+            <div class="input-group">
+              <label for="param-experience" id="label-param-experience"><i class="fa-solid fa-user-gear"></i> あなたの強み・実体験・失敗談</label>
+              <textarea id="param-experience" placeholder="例: 過去に3回挫折したが4回目でAIを活用して商品化できた経験, Canvaを毎日使って1年など"></textarea>
+            </div>
+            <div class="input-group">
+              <label for="param-strength" id="label-param-strength"><i class="fa-solid fa-award"></i> 提供できる具体的な手順・成果物</label>
+              <input type="text" id="param-strength" placeholder="例: 30日の投稿テンプレート, 審査通過の最終チェックシート">
+            </div>
+            <div class="input-group" style="grid-column: span 1;">
+              <label for="param-benefit" id="label-param-benefit"><i class="fa-solid fa-gift"></i> 読者が得られる最大の変化（ベネフィット）</label>
+              <input type="text" id="param-benefit" placeholder="例: 迷わず最初の1本を販売開始できる、作業時間を毎日30分削減できる">
+            </div>
+          </div>
+        </section>
+
+        <!-- Current Active Day Workspace -->
+        <section class="glass-card day-header" id="day-header-card">
+          <div class="day-header-meta">
+            <h2 id="active-day-title">Day 1</h2>
+            <p id="active-day-subtitle">Brain向きのテーマを決める</p>
+          </div>
+          <div class="day-progress-wrapper">
+            <span class="day-progress-title">DAY PROGRESS:</span>
+            <div class="day-progress-bar-container">
+              <div class="day-progress-bar" id="day-progress-bar"></div>
+            </div>
+            <span class="day-progress-text" id="day-progress-text">0%</span>
+          </div>
+          <div class="day-objective" id="active-day-objective">
+            自分が発信したいことではなく、市場で需要があり、自分が実体験に基づいて解決手順を提示できる本命テーマを1つに絞り込みます。
+          </div>
+        </section>
+
+        <!-- Tasks Checklist Workspace -->
+        <section class="glass-card">
+          <h3 class="section-title"><i class="fa-solid fa-square-check"></i> 本日のやること（タスクチェックリスト）</h3>
+          <div class="checklist-container" id="tasks-checklist">
+            <!-- 動的に生成されます -->
+          </div>
+        </section>
+
+        <!-- Dynamic Prompts Section -->
+        <section class="glass-card">
+          <h3 class="section-title"><i class="fa-solid fa-code"></i> 本日のAI伴走プロンプト（クリックでコピー）</h3>
+          <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: -0.75rem; margin-bottom: 1.25rem;">
+            上の「共通設定」に入力した内容が自動でプレースホルダーに埋め込まれ、パーソナライズされたプロンプトが仕上がります。
+          </p>
+          <div class="prompts-container" id="prompts-list">
+            <!-- 動的に生成されます -->
+          </div>
+        </section>
+
+        <!-- Deliverables Drafting Workspace -->
+        <section class="glass-card">
+          <h3 class="section-title"><i class="fa-solid fa-pen-to-square"></i> 本日の成果物ドラフト ワークスペース</h3>
+          <div class="drafting-container">
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: -0.75rem; margin-bottom: 0.5rem;">
+              プロンプトの実行結果や、ご自身のアイデア・Brain下書きをここにメモしてください。ブラウザに自動保存されます。
+            </p>
+            <textarea class="drafting-textarea" id="day-draft-textarea" placeholder="ここに成果物（テーマ案、タイトル候補、無料部分、構成など）を入力してください..."></textarea>
+            <div class="drafting-status">
+              <span class="saved-indicator" id="saved-indicator"><i class="fa-solid fa-circle-check"></i> 成果物をブラウザに自動保存しました</span>
+              <span id="char-count">0 文字</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Day Deliverables Goal -->
+        <section class="glass-card">
+          <h3 class="section-title"><i class="fa-solid fa-circle-check"></i> 本日の完成目標（最終アセット）</h3>
+          <ul class="deliverables-list" id="deliverables-list">
+            <!-- 動的に生成されます -->
+          </ul>
+        </section>
+
+      </main>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>Brain Launchpad Navigator v2 &copy; 2026. Designed for タダオ.</p>
+      <p style="margin-top: 0.25rem; font-size: 0.8rem; color: var(--text-muted);">
+        「完璧な教材を目指すより、まず販売開始できる教材を作る。」
+      </p>
+    </footer>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

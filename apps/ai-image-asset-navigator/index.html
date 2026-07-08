@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Image Asset Navigator - GPT Image 2実践ロードマップ</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- FontAwesome for Premium Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-section">
+        <h1><i class="fa-solid fa-image"></i> AI Image Asset Navigator</h1>
+        <p>AI画像を「ただ作って楽しむもの」から「使って価値を生む資産」に変える30日ロードマップ</p>
+      </div>
+      <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+        <!-- Theme Toggle Button -->
+        <button class="theme-toggle-btn" id="theme-toggle-btn" title="テーマ切り替え">
+          <i class="fa-solid fa-sun" id="theme-icon"></i>
+        </button>
+        <div class="day-progress-wrapper">
+          <span style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;">IMAGE READY STATUS:</span>
+          <div class="day-progress-bar-container" style="width: 150px; height: 8px;">
+            <div class="day-progress-bar" id="global-progress-bar"></div>
+          </div>
+          <span class="day-progress-text" id="global-progress-text">0%</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Grid -->
+    <div class="workspace-grid">
+      
+      <!-- Left Column: Sidebar -->
+      <aside class="sidebar">
+        
+        <!-- Progress Circular Indicator -->
+        <div class="glass-card progress-card">
+          <h3 class="progress-header">全体進捗率</h3>
+          <div class="circular-progress-container">
+            <svg class="circular-progress">
+              <circle class="bg-circle" cx="70" cy="70" r="60"></circle>
+              <circle class="fg-circle" id="global-circle-progress" cx="70" cy="70" r="60" stroke-dasharray="377" stroke-dashoffset="377"></circle>
+            </svg>
+            <div class="progress-value" id="global-circle-text">0%</div>
+          </div>
+          <div class="progress-stats" id="global-stats-text">0 / 27 タスク完了</div>
+        </div>
+
+        <!-- Navigation Phases -->
+        <div class="glass-card">
+          <h3 class="progress-header" style="margin-bottom: 1rem; font-size: 0.95rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem;">
+            <i class="fa-solid fa-compass"></i> 実践フェーズ
+          </h3>
+          <ul class="days-nav" id="days-nav-list">
+            <!-- JavaScriptで動的生成 -->
+          </ul>
+        </div>
+
+      </aside>
+
+      <!-- Right Column: Main Content -->
+      <main class="content-area">
+        
+        <!-- Global Configuration Parameters -->
+        <section class="glass-card parameters-card" id="parameters-section">
+          <div class="parameters-toggle" id="parameters-toggle-btn">
+            <h2><i class="fa-solid fa-sliders"></i> 1. スマートプロンプト共通設定（まず入力してください）</h2>
+            <i class="fa-solid fa-chevron-down toggle-icon" id="parameters-toggle-icon"></i>
+          </div>
+          <div class="parameters-grid">
+            <div class="input-group">
+              <label for="param-theme"><i class="fa-solid fa-lightbulb"></i> 発信テーマ / ジャンル</label>
+              <input type="text" id="param-theme" placeholder="例: 自作クラフトビールの魅力紹介">
+            </div>
+            <div class="input-group">
+              <label for="param-target"><i class="fa-solid fa-bullseye"></i> 想定ターゲット読者</label>
+              <input type="text" id="param-target" placeholder="例: クラフトビールを飲み始めた会社員">
+            </div>
+            <div class="input-group">
+              <label for="param-style"><i class="fa-solid fa-palette"></i> 画像の世界観 / トンマナ</label>
+              <input type="text" id="param-style" placeholder="例: 白背景、フラットイラスト、明るい木漏れ日">
+            </div>
+            <div class="input-group">
+              <label for="param-character"><i class="fa-solid fa-user-astronaut"></i> 主役キャラクター / 要素</label>
+              <input type="text" id="param-character" placeholder="例: ショートカットでエプロンをつけた女性">
+            </div>
+            <div class="input-group">
+              <label for="param-aspect"><i class="fa-solid fa-crop-simple"></i> 推奨サイズ / アスペクト比</label>
+              <input type="text" id="param-aspect" placeholder="例: 16:9 (X投稿用)">
+            </div>
+            <div class="input-group">
+              <label for="param-benefit"><i class="fa-solid fa-gift"></i> 得られるベネフィット (変化)</label>
+              <input type="text" id="param-benefit" placeholder="例: ビールの魅力が直感的に伝わり、飲んでみたくなる">
+            </div>
+          </div>
+        </section>
+
+        <!-- Current Active Day Workspace -->
+        <section class="glass-card day-header" id="day-header-card">
+          <div class="day-header-meta">
+            <h2 id="active-day-title">Phase 1</h2>
+            <p id="active-day-subtitle">基本習得 ＆ 最初の1枚</p>
+          </div>
+          <div class="day-progress-wrapper">
+            <span style="font-size: 0.8rem; color: var(--text-secondary);">PHASE PROGRESS:</span>
+            <div class="day-progress-bar-container">
+              <div class="day-progress-bar" id="day-progress-bar"></div>
+            </div>
+            <span class="day-progress-text" id="day-progress-text">0%</span>
+          </div>
+          <div class="day-objective" id="active-day-objective">
+            ChatGPTでの画像生成の基礎をマスターし、最初の1枚を仕上げます。
+          </div>
+        </section>
+
+        <!-- Tasks Checklist Workspace -->
+        <section class="glass-card">
+          <h3 class="section-title"><i class="fa-solid fa-square-check"></i> このフェーズのやることリスト</h3>
+          <div class="checklist-container" id="tasks-checklist">
+            <!-- JavaScriptで動的生成 -->
+          </div>
+        </section>
+
+        <!-- Dynamic Prompts Section -->
+        <section class="glass-card">
+          <h3 class="section-title"><i class="fa-solid fa-wand-magic-sparkles"></i> 伴走AI画像プロンプト（クリックでコピー）</h3>
+          <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: -0.75rem; margin-bottom: 1.25rem;">
+            上の「共通設定」に入力した内容がプレースホルダーに連動して埋め込まれ、パーソナライズされます。
+          </p>
+          <div class="prompts-container" id="prompts-list">
+            <!-- JavaScriptで動的生成 -->
+          </div>
+        </section>
+
+        <!-- Deliverables Drafting Workspace -->
+        <section class="glass-card">
+          <h3 class="section-title"><i class="fa-solid fa-note-sticky"></i> アイデア・画像レシピ下書きエリア</h3>
+          <div class="drafting-container">
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: -0.75rem; margin-bottom: 0.5rem;">
+              生成結果、画像レシピのメモ、X用コピーなどの下書きにご活用ください。ブラウザに自動保存されます。
+            </p>
+            <textarea class="drafting-textarea" id="day-draft-textarea" placeholder="ここに生成結果のメモやレシピ下書きを入力してください..."></textarea>
+            <div class="drafting-status">
+              <span class="saved-indicator" id="saved-indicator"><i class="fa-solid fa-circle-check"></i> 自動保存完了</span>
+              <span id="char-count">0 文字</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Day Deliverables Goal -->
+        <section class="glass-card">
+          <h3 class="section-title"><i class="fa-solid fa-flag-checkered"></i> 完成アセット目標</h3>
+          <ul class="deliverables-list" id="deliverables-list">
+            <!-- JavaScriptで動的生成 -->
+          </ul>
+        </section>
+
+        <!-- Textbook 5 Bonuses & Links -->
+        <section class="glass-card">
+          <h3 class="section-title"><i class="fa-solid fa-circle-nodes"></i> 教材限定特典 ＆ コミュニティ</h3>
+          <div class="resources-grid">
+            <div class="resource-card">
+              <div class="resource-icon"><i class="fa-solid fa-book-open-reader"></i></div>
+              <h4 class="resource-title">特典5：購入者限定メルマガ</h4>
+              <p class="resource-desc">2日に1回、計14日間、理解を深める補足と「次のアクション」が届きます。5大特典の受け取りもこちらから行います。</p>
+              <a href="https://my199p.com/p/r/zaX9Xqbp" target="_blank" class="resource-link">メルマガに登録する <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+            <div class="resource-card">
+              <div class="resource-icon"><i class="fa-solid fa-people-group"></i></div>
+              <h4 class="resource-title">みどりのAIアトリエ</h4>
+              <p class="resource-desc">Substack上で気軽に参加できるオープンコミュニティ。作った画像の共有やモチベーション維持のための雑談ができます。</p>
+              <a href="https://substack.com/chat/8912519" target="_blank" class="resource-link">コミュニティに参加する <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+          </div>
+        </section>
+
+      </main>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>AI Image Asset Navigator &copy; 2026. Designed for タダオ.</p>
+      <p style="margin-top: 0.25rem; font-size: 0.8rem; color: var(--text-muted);">
+        「きれいな画像はAIが作る。使える画像は目的から逆算して作る。」
+      </p>
+    </footer>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
