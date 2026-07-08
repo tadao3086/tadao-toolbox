@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>マンガタクティクス 〜デッキバトル〜</title>
+<!--
+  ============================================================
+  マンガタクティクス デッキバトル版
+  ------------------------------------------------------------
+  ・カード ＝ quiz-data.js の各スキル（知識を足すとカードも増える）
+  ・カードを出すとそのスキルのクイズが出題される
+     正解＝会心の大ダメージ／不正解＝小ダメージ＋解説で学べる
+  ・同じ「系統」を続けて出すと【連携】で倍率アップ（使いこなし）
+  ・特定の組み合わせは【必殺コンボ】として追加ボーナス
+
+  ★画像はすべて「仮（プレースホルダ）」です★
+   ・カード絵 → CARD_META の img: "画像パス" を入れると差し替わる
+   ・敵の絵   → ENEMY_TYPES の img: "画像パス"
+   ・背景     → STAGES の bg: "画像パス"
+   何も入れなければ、系統カラー＋絵文字の仮絵が表示されます。
+  ============================================================
+-->
+<style>
+  :root {
+    --gold: #d8b56c;
+    --gold-bright: #f0d89a;
+    --ivory: #f2ecd8;
+    --ivory-dim: #b8b09a;
+    --navy1: #2a3252;
+    --navy2: #1a2038;
+    --navy3: #12172a;
+    --hp: #6cd984;
+    --dmg: #ff6b6b;
+    --cyan: #7fd8e8;
+    /* 系統カラー */
+    --sys0: #e8b24c;  /* 設計する力 */
+    --sys0b: #7a5a1c;
+    --sys1: #5ab8d8;  /* 読ませる力 */
+    --sys1b: #1c4a5e;
+    --sys2: #6cc27a;  /* 仕上げる力 */
+    --sys2b: #1f5a34;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { background: #0d1020; }
+  body {
+    font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+    background: radial-gradient(ellipse at 50% -10%, #232b4d 0%, #0d1020 60%), #0d1020;
+    color: var(--ivory);
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+  .serif { font-family: "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", serif; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 16px; }
+
+  .fpanel {
+    background: linear-gradient(170deg, var(--navy1) 0%, var(--navy2) 55%, var(--navy3) 100%);
+    border: 2px solid var(--gold);
+    border-radius: 8px;
+    box-shadow: inset 0 0 0 1px rgba(255,245,210,0.18), inset 0 14px 30px rgba(255,255,255,0.05), 0 6px 18px rgba(0,0,0,0.55);
+    padding: 16px 18px;
+  }
+  .fpanel h2 {
+    font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+    font-size: 16px; letter-spacing: 3px; color: var(--gold-bright); margin-bottom: 8px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+  }
+  .fpanel .desc { font-size: 12px; color: var(--ivory-dim); line-height: 1.8; margin-bottom: 12px; }
+  .mb14 { margin-bottom: 14px; }
+
+  header.top { text-align: center; padding: 18px 0 14px; }
+  header.top h1 {
+    font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+    font-size: 32px; letter-spacing: 5px;
+    background: linear-gradient(180deg, #fdf3d0 0%, #e8c268 45%, #9a7226 75%, #f0d89a 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.7));
+  }
+  header.top .sub { font-size: 12px; letter-spacing: 4px; color: var(--ivory-dim); margin-top: 4px; }
+  .save-row { display: flex; justify-content: center; gap: 26px; margin-top: 10px; font-size: 13px; color: var(--ivory-dim); }
+  .save-row b { color: var(--gold-bright); font-size: 16px; }
+
+  .placeholder-note {
+    text-align: center; font-size: 11px; color: #8a7a4a; margin: -4px 0 12px;
+    letter-spacing: 1px;
+  }
+
+  /* ===== ボタン ===== */
+  .gbtn {
+    font-family: "Hiragino Mincho ProN", serif; font-size: 13px; font-weight: bold; letter-spacing: 2px;
+    padding: 9px 22px; border-radius: 6px; cursor: pointer; color: #241a06;
+    background: linear-gradient(180deg, #f7e6b2 0%, #d8b56c 55%, #b08c42 100%);
+    border: 1px solid #6d5522; box-shadow: inset 0 1px 0 rgba(255,255,255,0.7), 0 3px 8px rgba(0,0,0,0.5);
+    text-shadow: 0 1px 0 rgba(255,255,255,0.35);
+  }
+  .gbtn:hover { filter: brightness(1.1); }
+  .gbtn:active { transform: translateY(1px); }
+  .gbtn:disabled { filter: grayscale(1) brightness(0.7); cursor: not-allowed; }
+  .gbtn.blue {
+    color: #eaf4ff; background: linear-gradient(180deg, #5a7ab8 0%, #35507e 55%, #24365c 100%);
+    border-color: #1a2745; text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), 0 3px 8px rgba(0,0,0,0.5);
+  }
+  .sbtn {
+    font-family: inherit; font-size: 12px; letter-spacing: 1px; padding: 6px 16px; border-radius: 5px; cursor: pointer;
+    background: rgba(0,0,0,0.3); color: var(--ivory); border: 1px solid rgba(216,181,108,0.6);
+  }
+  .sbtn:hover { background: rgba(216,181,108,0.18); }
+
+  /* ===== ステージ選択 ===== */
+  .stage-list { display: flex; flex-direction: column; gap: 10px; }
+  .stage-card {
+    display: flex; align-items: center; gap: 14px;
+    border: 2px solid rgba(216,181,108,0.55); border-radius: 8px; padding: 10px 14px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.05), rgba(0,0,0,0.15));
+    transition: border-color 0.15s, transform 0.1s;
+  }
+  .stage-card:not(.locked):hover { border-color: var(--gold-bright); transform: translateX(3px); }
+  .stage-card.locked { opacity: 0.42; filter: grayscale(0.6); }
+  .stage-thumb {
+    width: 84px; height: 54px; border-radius: 5px; flex: none; border: 1px solid rgba(240,216,154,0.6);
+    display: flex; align-items: center; justify-content: center; font-size: 24px; overflow: hidden;
+    box-shadow: inset 0 0 12px rgba(0,0,0,0.35); background-size: cover; background-position: center;
+  }
+  .stage-body { flex: 1; min-width: 0; }
+  .stage-body .sname { font-family: "Hiragino Mincho ProN", serif; font-size: 15px; letter-spacing: 2px; color: var(--gold-bright); margin-bottom: 2px; }
+  .stage-body .sinfo { font-size: 11.5px; color: var(--ivory-dim); line-height: 1.6; }
+  .clear-mark { color: var(--gold-bright); font-size: 17px; margin-right: 4px; }
+
+  footer { text-align: center; font-size: 11px; color: #565d75; margin-top: 18px; }
+  .reset-link { color: #565d75; text-decoration: underline; cursor: pointer; background: none; border: none; font-size: 11px; font-family: inherit; }
+
+  /* ===== カード（共通） ===== */
+  .card {
+    position: relative; width: 128px; height: 182px; border-radius: 11px; flex: none;
+    background: linear-gradient(170deg, #2c2136 0%, #1a1526 100%);
+    border: 2px solid var(--gold); cursor: pointer; user-select: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(255,245,210,0.15);
+    transition: transform 0.14s, box-shadow 0.14s, filter 0.14s;
+    overflow: hidden;
+  }
+  .card.sys0 { border-color: var(--sys0); }
+  .card.sys1 { border-color: var(--sys1); }
+  .card.sys2 { border-color: var(--sys2); }
+  .card .art {
+    height: 82px; margin: 6px 6px 0; border-radius: 7px; overflow: hidden;
+    display: flex; align-items: center; justify-content: center; position: relative;
+    box-shadow: inset 0 0 12px rgba(0,0,0,0.5);
+  }
+  .card .art .ph-emoji { font-size: 44px; filter: drop-shadow(0 3px 4px rgba(0,0,0,0.5)); }
+  .card .art img { width: 100%; height: 100%; object-fit: cover; }
+  .card .art .ph-tag {
+    position: absolute; bottom: 3px; right: 5px; font-size: 8px; letter-spacing: 1px;
+    color: rgba(255,255,255,0.55); background: rgba(0,0,0,0.35); padding: 1px 4px; border-radius: 3px;
+  }
+  .card .cost {
+    position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #7fb0ff, #2a3f8c);
+    border: 1.5px solid #cfe0ff; display: flex; align-items: center; justify-content: center;
+    font-weight: bold; font-size: 14px; color: #fff; text-shadow: 0 1px 2px #000; z-index: 3;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+  }
+  .card .type-icon {
+    position: absolute; top: 5px; right: 5px; font-size: 15px; z-index: 3;
+    filter: drop-shadow(0 1px 2px #000);
+  }
+  .card .cname {
+    font-family: "Hiragino Mincho ProN", serif; text-align: center; font-size: 13px; font-weight: bold;
+    color: var(--gold-bright); margin: 7px 4px 2px; letter-spacing: 0.5px; line-height: 1.2;
+  }
+  .card .csys {
+    text-align: center; font-size: 8.5px; letter-spacing: 1px; margin-bottom: 4px;
+    color: var(--ivory-dim);
+  }
+  .card .cbody {
+    font-size: 9.5px; line-height: 1.45; color: var(--ivory); padding: 0 8px; text-align: center;
+  }
+  .card .cpow {
+    position: absolute; bottom: 4px; left: 0; right: 0; text-align: center;
+    font-family: "Hiragino Mincho ProN", serif; font-size: 11px; color: var(--gold-bright);
+  }
+  .card .cpow.heal { color: #8effa8; }
+
+  /* ===== 手札 ===== */
+  .battle-head {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 16px; margin-bottom: 12px;
+  }
+  .battle-head .bname { font-size: 16px; letter-spacing: 3px; color: var(--gold-bright); }
+  .battle-head .turn { font-size: 12.5px; color: var(--ivory-dim); }
+  .battle-head .spacer { flex: 1; }
+
+  /* ===== 戦場（ボード） ===== */
+  .board-outer {
+    border: 2px solid var(--gold); border-radius: 10px; overflow: hidden; margin-bottom: 12px;
+    box-shadow: inset 0 0 0 1px rgba(255,245,210,0.18), 0 8px 24px rgba(0,0,0,0.6);
+  }
+  .board {
+    position: relative; min-height: 300px; padding: 16px; background-size: cover; background-position: center;
+  }
+  .board.theme-0 { background: linear-gradient(180deg, #a8cfe8 0%, #d8e2d8 50%, #d8c495 100%); }
+  .board.theme-1 { background: linear-gradient(180deg, #274b46 0%, #3c6b58 50%, #4c6b48 100%); }
+  .board.theme-2 { background: linear-gradient(180deg, #f0a35e 0%, #e07040 45%, #6e3a4a 100%); }
+  .board.theme-3 { background: linear-gradient(180deg, #3a1620 0%, #6e2222 50%, #7e2e1e 100%); }
+  .board.theme-4 { background: linear-gradient(180deg, #0c0c22 0%, #1e1a3e 55%, #2a1e44 100%); }
+  .board.shake { animation: scshake 0.35s; }
+  @keyframes scshake {
+    0%,100% { transform: translate(0,0); } 20% { transform: translate(-5px,2px); }
+    45% { transform: translate(4px,-2px); } 70% { transform: translate(-3px,1px); }
+  }
+
+  .enemy-row { display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px; }
+  .enemy {
+    width: 108px; text-align: center; cursor: pointer; position: relative;
+    transition: transform 0.14s;
+  }
+  .enemy:hover { transform: translateY(-4px); }
+  .enemy.dead { opacity: 0; pointer-events: none; transition: opacity 0.4s; }
+  .enemy .esprite {
+    width: 92px; height: 92px; margin: 0 auto; border-radius: 12px; position: relative;
+    background: radial-gradient(circle at 40% 30%, rgba(255,255,255,0.12), rgba(0,0,0,0.25));
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.18);
+  }
+  .enemy .esprite .eemoji { font-size: 52px; filter: drop-shadow(0 5px 4px rgba(0,0,0,0.45)); animation: idle 2.4s ease-in-out infinite; }
+  .enemy.boss .esprite .eemoji { font-size: 66px; }
+  .enemy .esprite img { width: 100%; height: 100%; object-fit: cover; }
+  @keyframes idle { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+  .enemy.hit .esprite { animation: hitflash 0.4s; }
+  @keyframes hitflash {
+    0%,100% { filter: none; transform: translateX(0); }
+    25% { filter: brightness(3); transform: translateX(-5px); }
+    60% { transform: translateX(4px); }
+  }
+  .enemy.targeted .esprite { box-shadow: 0 0 0 3px var(--dmg), 0 0 16px rgba(255,80,70,0.7); }
+  .enemy .ename { font-size: 11px; color: #fff; margin-top: 4px; text-shadow: 0 1px 3px #000; line-height: 1.3; }
+  .enemy .ehp {
+    height: 8px; margin: 3px 6px 0; background: rgba(0,0,0,0.55); border-radius: 4px; overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.3);
+  }
+  .enemy .ehp i { display: block; height: 100%; background: linear-gradient(180deg, #ffb0a0, #e05540); transition: width 0.35s; }
+  .enemy .ehp-num { font-size: 9px; color: #fff; text-shadow: 0 1px 2px #000; margin-top: 1px; }
+  .enemy .intent {
+    position: absolute; top: -8px; right: 6px; font-size: 11px; color: #fff;
+    background: rgba(180,40,30,0.85); border-radius: 10px; padding: 1px 7px; white-space: nowrap;
+    border: 1px solid rgba(255,180,170,0.6);
+  }
+
+  /* プレイヤー（作家）バー */
+  .player-bar {
+    display: flex; align-items: center; gap: 14px; margin-top: 8px;
+    background: rgba(6,8,20,0.55); border: 1px solid rgba(216,181,108,0.5); border-radius: 10px; padding: 8px 14px;
+  }
+  .player-bar .pavatar {
+    width: 52px; height: 52px; border-radius: 10px; flex: none; font-size: 30px;
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+    background: radial-gradient(circle at 35% 30%, #46548a, #222c50);
+    border: 2px solid var(--gold); box-shadow: inset 0 0 8px rgba(0,0,0,0.4);
+  }
+  .player-bar .pavatar img { width: 100%; height: 100%; object-fit: cover; }
+  .player-bar .pinfo { flex: 1; min-width: 160px; }
+  .player-bar .pname { font-size: 13px; color: var(--gold-bright); font-family: "Hiragino Mincho ProN", serif; letter-spacing: 1px; }
+  .php-line { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+  .php-track { flex: 1; height: 12px; background: rgba(0,0,0,0.55); border-radius: 6px; border: 1px solid rgba(255,255,255,0.25); overflow: hidden; }
+  .php-track i { display: block; height: 100%; background: linear-gradient(180deg, #a2efaf, #4cbf62); border-radius: 5px; transition: width 0.35s; }
+  .php-num { font-size: 12px; color: var(--ivory); min-width: 66px; }
+  .php-num b { color: #fff; }
+
+  /* エネルギー & 連携 */
+  .resource-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .energy { display: flex; align-items: center; gap: 6px; }
+  .energy .lab { font-size: 11px; color: var(--cyan); letter-spacing: 1px; }
+  .orb {
+    width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid #cfe0ff;
+    background: radial-gradient(circle at 35% 30%, #7fb0ff, #2a3f8c);
+    box-shadow: 0 0 8px rgba(120,170,255,0.6);
+  }
+  .orb.spent { background: #1a2038; box-shadow: none; border-color: #3a4468; }
+  .combo-meter { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .combo-meter .clab { color: var(--gold-bright); letter-spacing: 1px; }
+  .combo-meter .cval { font-family: "Hiragino Mincho ProN", serif; font-size: 15px; color: #ffd76a; }
+  .combo-meter .cval.hot { text-shadow: 0 0 10px rgba(255,180,60,0.9); }
+
+  /* 手札エリア */
+  .hand-panel { padding: 12px 14px 8px; }
+  .hand-title { font-family: "Hiragino Mincho ProN", serif; letter-spacing: 3px; font-size: 13px; color: var(--gold-bright); margin-bottom: 4px; }
+  .hand-sub { font-size: 11px; color: var(--ivory-dim); margin-bottom: 10px; }
+  .hand {
+    display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; min-height: 190px; align-items: flex-end;
+  }
+  .hand .card.playable:hover { transform: translateY(-12px) scale(1.04); box-shadow: 0 12px 22px rgba(0,0,0,0.6), 0 0 14px rgba(240,216,154,0.4); z-index: 5; }
+  .hand .card.unplayable { filter: grayscale(0.55) brightness(0.68); cursor: not-allowed; }
+  .pile-info { display: flex; justify-content: center; gap: 20px; font-size: 11px; color: var(--ivory-dim); margin-top: 8px; }
+
+  /* ダメージ数字 */
+  .float-layer { position: absolute; inset: 0; pointer-events: none; z-index: 50; }
+  .dmg-float {
+    position: absolute; transform: translateX(-50%); text-align: center;
+    font-family: "Hiragino Mincho ProN", serif; font-weight: bold; font-size: 26px; color: #fff;
+    text-shadow: 0 0 4px #000, 2px 2px 0 #000, -2px 2px 0 #000, 2px -2px 0 #000, -2px -2px 0 #000;
+    animation: dmgup 1s ease-out forwards; white-space: nowrap;
+  }
+  .dmg-float.heal { color: #8effa8; }
+  .dmg-float.crit { color: var(--gold-bright); font-size: 32px; }
+  @keyframes dmgup {
+    0% { opacity: 0; transform: translate(-50%,6px) scale(0.7); }
+    18% { opacity: 1; transform: translate(-50%,-6px) scale(1.15); }
+    38% { transform: translate(-50%,-10px) scale(1); }
+    100% { opacity: 0; transform: translate(-50%,-40px) scale(1); }
+  }
+
+  /* バナー */
+  .banner {
+    position: absolute; left: 0; right: 0; top: 40%; height: 60px; z-index: 60;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(90deg, transparent, rgba(10,12,26,0.85) 18%, rgba(10,12,26,0.85) 82%, transparent);
+    border-top: 1px solid rgba(240,216,154,0.7); border-bottom: 1px solid rgba(240,216,154,0.7);
+    pointer-events: none; animation: bannerIn 1.5s ease forwards;
+  }
+  .banner .btext { font-family: "Hiragino Mincho ProN", serif; font-size: 24px; letter-spacing: 8px; color: var(--gold-bright); text-shadow: 0 2px 8px rgba(0,0,0,0.9); white-space: nowrap; }
+  .banner .btext small { display: block; text-align: center; font-size: 11px; letter-spacing: 4px; color: var(--ivory-dim); }
+  .banner.red .btext { color: #ff9080; }
+  .banner.combo .btext { color: #ffd76a; }
+  @keyframes bannerIn {
+    0% { opacity: 0; transform: scaleX(0.2); } 14% { opacity: 1; transform: scaleX(1); }
+    82% { opacity: 1; } 100% { opacity: 0; }
+  }
+
+  #blog { font-size: 12px; line-height: 1.9; max-height: 120px; overflow-y: auto; color: var(--ivory-dim); }
+  #blog p { border-bottom: 1px dashed rgba(216,181,108,0.2); padding: 2px 0; }
+  #blog p:first-child { color: var(--ivory); }
+
+  /* ===== デッキ編成 ===== */
+  .deck-count { font-size: 13px; color: var(--gold-bright); }
+  .deck-count b { font-size: 18px; }
+  .collection { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+  .collection .card.mini { width: 112px; height: 160px; }
+  .collection .card.mini .art { height: 66px; }
+  .collection .card.mini .art .ph-emoji { font-size: 36px; }
+  .collection .card.in-deck { box-shadow: 0 0 0 3px var(--gold-bright), 0 4px 12px rgba(0,0,0,0.55); }
+  .collection .card.locked { filter: grayscale(1) brightness(0.5); cursor: not-allowed; }
+  .collection .card .deck-badge {
+    position: absolute; bottom: 22px; left: 0; right: 0; text-align: center; font-size: 9px;
+    color: #241a06; z-index: 4;
+  }
+  .collection .card .lock-tag {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 4px; font-size: 11px; color: #fff; z-index: 5; background: rgba(0,0,0,0.35);
+  }
+  .lock-tag .lk { font-size: 22px; }
+
+  /* ===== モーダル ===== */
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(4,6,16,0.78); z-index: 2000; padding: 20px; overflow-y: auto; }
+  .modal-bg.show { display: flex; align-items: flex-start; justify-content: center; }
+  .modal {
+    background: linear-gradient(170deg, var(--navy1) 0%, var(--navy2) 55%, var(--navy3) 100%);
+    border: 2px solid var(--gold); border-radius: 10px;
+    box-shadow: inset 0 0 0 1px rgba(255,245,210,0.18), 0 14px 40px rgba(0,0,0,0.8);
+    max-width: 580px; width: 100%; padding: 26px 28px; margin-top: 36px; animation: mpop 0.22s ease-out;
+  }
+  @keyframes mpop { from { transform: scale(0.94); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .modal h3 { font-family: "Hiragino Mincho ProN", serif; font-size: 19px; letter-spacing: 3px; color: var(--gold-bright); margin-bottom: 6px; }
+  .skill-tag { display: inline-block; font-size: 11.5px; letter-spacing: 1px; border: 1px solid rgba(216,181,108,0.7); color: var(--gold-bright); padding: 3px 12px; border-radius: 3px; margin-bottom: 14px; background: rgba(0,0,0,0.25); }
+  .question { font-size: 15px; line-height: 1.8; color: var(--ivory); background: rgba(0,0,0,0.3); border: 1px solid rgba(216,181,108,0.3); border-radius: 8px; padding: 14px 16px; margin-bottom: 14px; }
+  .choice-btn { display: block; width: 100%; text-align: left; font-family: inherit; font-size: 14px; color: var(--ivory); background: rgba(255,255,255,0.04); padding: 12px 14px 12px 32px; margin-bottom: 8px; border: 1px solid rgba(216,181,108,0.4); border-radius: 6px; cursor: pointer; line-height: 1.6; position: relative; }
+  .choice-btn:hover { background: rgba(216,181,108,0.16); border-color: var(--gold-bright); }
+  .choice-btn:hover::before { content: "▶"; position: absolute; left: 12px; top: 14px; font-size: 10px; color: var(--gold-bright); }
+  .choice-btn.correct { background: rgba(76,191,98,0.22); border-color: #6cd984; color: #c8f5d0; font-weight: bold; }
+  .choice-btn.wrong { background: rgba(224,85,64,0.2); border-color: #e05540; color: #ffc4ba; }
+  .choice-btn:disabled { cursor: default; }
+  .explain { display: none; background: rgba(216,181,108,0.1); border: 1px dashed rgba(240,216,154,0.6); border-radius: 8px; padding: 14px 16px; font-size: 13px; line-height: 1.9; margin-top: 6px; color: var(--ivory); }
+  .explain .head { font-family: "Hiragino Mincho ProN", serif; font-weight: bold; margin-bottom: 6px; font-size: 15px; color: var(--gold-bright); }
+  .modal-footer { text-align: center; margin-top: 18px; }
+  .result-big { text-align: center; font-family: "Hiragino Mincho ProN", serif; font-size: 26px; letter-spacing: 6px; color: var(--gold-bright); margin-bottom: 12px; text-shadow: 0 2px 8px rgba(0,0,0,0.8); }
+  .result-body { font-size: 14px; line-height: 2; text-align: center; color: var(--ivory); }
+  .result-body b { color: var(--gold-bright); }
+
+  .toast { position: fixed; top: 18px; left: 50%; transform: translateX(-50%); background: linear-gradient(180deg, var(--navy1), var(--navy3)); color: var(--gold-bright); font-size: 13px; letter-spacing: 1px; padding: 10px 26px; border: 1px solid var(--gold); border-radius: 24px; z-index: 3000; box-shadow: 0 6px 20px rgba(0,0,0,0.7); animation: tflash 2s ease forwards; }
+  @keyframes tflash { 0% { transform: translateX(-50%) translateY(-50px); opacity: 0; } 12% { transform: translateX(-50%) translateY(0); opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <h1>マンガタクティクス</h1>
+    <div class="sub">— DECK BATTLE ／ 知識を組み合わせて戦うカードバトル —</div>
+    <div class="save-row">
+      <span>作家レベル <b id="hd-level">1</b></span>
+      <span>攻略 <b id="hd-cleared">0</b> ／ 5 章</span>
+      <span>所持カード <b id="hd-cards">0</b></span>
+    </div>
+  </header>
+  <div class="placeholder-note">※カード・敵・背景の画像はすべて仮です（あとで差し替え可能）</div>
+
+  <!-- ============ ホーム（ステージ選択＋デッキ） ============ -->
+  <div id="screen-home">
+    <div class="fpanel mb14">
+      <h2>出撃マップ</h2>
+      <div class="desc">
+        デッキの技カードを出して創作の敵を討て。カードを出すと<b style="color:var(--gold-bright)">マンガ知識クイズ</b>が出る。
+        正解すれば会心の一撃。さらに<b style="color:#ffd76a">同じ系統や相性のいい技を続けて出すと【連携】で倍率アップ</b>——組み合わせの使いこなしが勝負を決める。
+      </div>
+      <div class="stage-list" id="stage-list"></div>
+    </div>
+
+    <div class="fpanel mb14">
+      <h2>デッキ編成</h2>
+      <div class="desc">章をクリアすると新しい技カードが解放される。手持ちから <b>6〜12枚</b> を選んでデッキを組もう。</div>
+      <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:12px;">
+        <span class="deck-count">デッキ <b id="deck-num">0</b> / 12 枚</span>
+        <button class="sbtn" id="btn-auto-deck">おまかせ編成</button>
+        <span style="font-size:11px;color:var(--ivory-dim);">カードをクリックで出し入れ</span>
+      </div>
+      <div class="collection" id="collection"></div>
+    </div>
+
+    <div class="fpanel mb14">
+      <h2>道場</h2>
+      <div class="desc">全スキルからランダム出題。勝敗に関係なく、純粋に知識を磨く自由修行。</div>
+      <button class="gbtn blue" id="btn-dojo">📚 自由修行する</button>
+    </div>
+
+    <footer>
+      セーブは自動（このブラウザに保存）｜
+      <a href="index.html" style="color:#565d75;">← SRPG版へ</a> ｜
+      <button class="reset-link" id="btn-reset">最初からやり直す</button>
+    </footer>
+  </div>
+
+  <!-- ============ バトル ============ -->
+  <div id="screen-battle" style="display:none;">
+    <div class="fpanel battle-head">
+      <span class="bname serif" id="bt-name"></span>
+      <span class="turn">TURN <b id="bt-turn">1</b></span>
+      <span class="spacer"></span>
+      <button class="sbtn" id="btn-endturn">⏭ ターン終了</button>
+      <button class="sbtn" id="btn-retreat">🏳 撤退</button>
+    </div>
+
+    <div class="board-outer">
+      <div class="board" id="board">
+        <div class="enemy-row" id="enemy-row"></div>
+        <div class="player-bar">
+          <div class="pavatar" id="p-avatar">✍️</div>
+          <div class="pinfo">
+            <div class="pname">あなた（作家）</div>
+            <div class="php-line">
+              <div class="php-track"><i id="php-fill" style="width:100%"></i></div>
+              <span class="php-num">HP <b id="php-num">0</b>/<span id="php-max">0</span></span>
+            </div>
+          </div>
+        </div>
+        <div class="float-layer" id="float-layer"></div>
+      </div>
+    </div>
+
+    <div class="fpanel mb14">
+      <div class="resource-row">
+        <div class="energy">
+          <span class="lab">ENERGY</span>
+          <div id="orbs" style="display:flex; gap:6px;"></div>
+        </div>
+        <div class="combo-meter">
+          <span class="clab">連携</span>
+          <span class="cval" id="combo-val">×1.0</span>
+          <span id="combo-note" style="font-size:11px;color:var(--ivory-dim);"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="fpanel hand-panel mb14">
+      <div class="hand-title">HAND ─ 手札</div>
+      <div class="hand-sub" id="hand-sub">カードをクリックして技を出す。まず攻撃したい敵をクリックで選択（初期は左端）。</div>
+      <div class="hand" id="hand"></div>
+      <div class="pile-info">
+        <span>🂠 山札 <b id="draw-num">0</b></span>
+        <span>🗑 捨札 <b id="disc-num">0</b></span>
+      </div>
+    </div>
+
+    <div class="fpanel">
+      <div class="hand-title">LOG ─ 戦況</div>
+      <div id="blog"></div>
+    </div>
+  </div>
+</div>
+
+<!-- クイズモーダル -->
+<div class="modal-bg" id="quiz-modal">
+  <div class="modal">
+    <h3 id="quiz-title">技の発動</h3>
+    <span class="skill-tag" id="quiz-skill"></span>
+    <div class="question" id="quiz-q"></div>
+    <div id="quiz-choices"></div>
+    <div class="explain" id="quiz-explain"></div>
+    <div class="modal-footer"><button class="gbtn" id="quiz-close" style="display:none;">とじる</button></div>
+  </div>
+</div>
+
+<!-- 結果モーダル -->
+<div class="modal-bg" id="result-modal">
+  <div class="modal">
+    <div class="result-big" id="res-big"></div>
+    <div class="result-body" id="res-body"></div>
+    <div class="modal-footer"><button class="gbtn" id="res-close">とじる</button></div>
+  </div>
+</div>
+
+<script src="quiz-data.js"></script>
+<script>
+"use strict";
+
+/* ============================================================
+   系統（3つの力）── 連携判定と色に使う
+============================================================ */
+const SYS = [
+  { id: 0, name: "設計する力", color: "var(--sys0)", grad: "linear-gradient(150deg,#6a4d18,#3a2a0c)" },
+  { id: 1, name: "読ませる力", color: "var(--sys1)", grad: "linear-gradient(150deg,#1c4a5e,#0e2632)" },
+  { id: 2, name: "仕上げる力", color: "var(--sys2)", grad: "linear-gradient(150deg,#1f5a34,#0e2c18)" },
+];
+
+/* ============================================================
+   カード定義
+   ─────────────────────────────────────────
+   ★カード＝ quiz-data.js のスキル。ここに無いスキルを quiz-data に
+     足しても、既定値のカードとして自動で登場します。
+   ★画像を入れたいときは img: "画像パス" を足すだけ。
+     type: "atk"=攻撃 / "heal"=回復
+     sys : 0=設計 / 1=読ませる / 2=仕上げる
+     cost: 消費エネルギー / power: 基礎威力 / unlock: 解放される章(0=最初から)
+============================================================ */
+const CARD_META = {
+  // ── 設計する力 (sys0) ──
+  kikaku: { sys:0, type:"atk",  cost:1, power:8,  emoji:"💡", unlock:0, flavor:"急所を見抜く一撃" },
+  theme:  { sys:0, type:"atk",  cost:2, power:11, emoji:"🎯", unlock:1, flavor:"一本の芯で貫く" },
+  dokusha:{ sys:0, type:"atk",  cost:1, power:7,  emoji:"👥", unlock:2, flavor:"狙いを鋭く絞る" },
+  chara:  { sys:0, type:"atk",  cost:2, power:11, emoji:"🎭", unlock:1, flavor:"魅力でひるませる" },
+  story:  { sys:0, type:"atk",  cost:2, power:10, emoji:"📖", unlock:0, flavor:"流れで畳みかける" },
+  kanjo:  { sys:0, type:"heal", cost:2, power:12, emoji:"❤️‍🩹", unlock:0, flavor:"感情の波で癒やす" },
+  ochi:   { sys:0, type:"atk",  cost:3, power:16, emoji:"🔄", unlock:2, flavor:"どんでん返しの大技" },
+  // ── 読ませる力 (sys1) ──
+  name:    { sys:1, type:"atk",  cost:2, power:11, emoji:"📝", unlock:1, flavor:"設計図の最短打" },
+  koma:    { sys:1, type:"atk",  cost:1, power:9,  emoji:"🔳", unlock:0, flavor:"コマ割りで斬る" },
+  shisen:  { sys:1, type:"atk",  cost:1, power:8,  emoji:"👁️", unlock:0, flavor:"視線を導き必中" },
+  serifu:  { sys:1, type:"atk",  cost:1, power:9,  emoji:"💬", unlock:0, flavor:"グサッと刺す言葉" },
+  mono:    { sys:1, type:"heal", cost:1, power:8,  emoji:"🗯️", unlock:2, flavor:"本音で立て直す" },
+  hyojo:   { sys:1, type:"atk",  cost:1, power:8,  emoji:"😤", unlock:1, flavor:"表情で揺さぶる" },
+  enshutsu:{ sys:1, type:"atk",  cost:2, power:12, emoji:"💥", unlock:1, flavor:"集中線の大演出" },
+  haikei:  { sys:1, type:"atk",  cost:1, power:7,  emoji:"🏞️", unlock:3, flavor:"空気で包み崩す" },
+  onoma:   { sys:1, type:"atk",  cost:1, power:8,  emoji:"💢", unlock:2, flavor:"描き文字の衝撃" },
+  page:    { sys:1, type:"atk",  cost:2, power:11, emoji:"📄", unlock:3, flavor:"めくりの引き" },
+  // ── 仕上げる力 (sys2) ──
+  sakuga:  { sys:2, type:"atk",  cost:2, power:11, emoji:"🖌️", unlock:0, flavor:"伝わる絵の一撃" },
+  ikkan:   { sys:2, type:"atk",  cost:1, power:8,  emoji:"🔁", unlock:3, flavor:"崩れぬ連撃" },
+  aimanga: { sys:2, type:"atk",  cost:2, power:10, emoji:"🤖", unlock:3, flavor:"AI量産の波状打" },
+  shiage2: { sys:2, type:"heal", cost:2, power:13, emoji:"🩹", unlock:1, flavor:"仕上げリペア" },
+  henshu:  { sys:2, type:"atk",  cost:2, power:10, emoji:"✂️", unlock:2, flavor:"削る勇気で鋭く" },
+  hasshin: { sys:2, type:"atk",  cost:3, power:15, emoji:"📣", unlock:2, flavor:"バズ発信ビーム" },
+  check:   { sys:2, type:"atk",  cost:1, power:9,  emoji:"✅", unlock:4, flavor:"完成チェック一閃" },
+};
+const DEFAULT_META = { sys:0, type:"atk", cost:2, power:10, emoji:"❓", unlock:0, flavor:"新しい技" };
+
+/* SKILL_NAMES（quiz-data.js）に載っている全スキルをカード化 */
+function buildCards() {
+  const cards = {};
+  for (const id in SKILL_NAMES) {
+    const m = CARD_META[id] || DEFAULT_META;
+    cards[id] = {
+      id, name: SKILL_NAMES[id],
+      sys: m.sys, type: m.type, cost: m.cost, power: m.power,
+      emoji: m.emoji, flavor: m.flavor, unlock: m.unlock, img: m.img || null,
+    };
+  }
+  return cards;
+}
+const CARDS = buildCards();
+const ALL_IDS = Object.keys(CARDS);
+
+/* ============================================================
+   必殺コンボ（相性のいい2枚を続けて出すと追加ボーナス＝使いこなし）
+   ─ 順番はどちらでもOK。teachで「なぜ効くか」を一言学べる
+============================================================ */
+const SYNERGIES = [
+  { pair:["koma","enshutsu"], name:"迫力の見せ場", teach:"大ゴマ×集中線で見せ場の迫力が跳ね上がる" },
+  { pair:["shisen","koma"],   name:"流れる誌面",   teach:"視線誘導×コマ割りで、読者が迷わず読み進める" },
+  { pair:["serifu","hyojo"],  name:"刺さる感情",   teach:"セリフ×表情で、キャラの感情がまっすぐ届く" },
+  { pair:["story","ochi"],    name:"納得のオチ",   teach:"構成×オチで『そういうことか！』の快感が生まれる" },
+  { pair:["kanjo","mono"],    name:"深い共感",     teach:"感情設計×モノローグで、読者の共感が一気に深まる" },
+  { pair:["chara","story"],   name:"動き出す主役", teach:"キャラ×物語構成で、主人公が自分から動き出す" },
+  { pair:["sakuga","haikei"], name:"説得力の絵",   teach:"作画×背景で、その場に居るような説得力が出る" },
+  { pair:["hasshin","ochi"],  name:"バズる最終コマ", teach:"発信×オチで、最後のコマがシェアを呼ぶ" },
+  { pair:["theme","chara"],   name:"芯のある主役", teach:"テーマ×キャラで、主人公の選択に説得力が宿る" },
+  { pair:["name","koma"],     name:"設計どおり",   teach:"ネーム×コマ割りで、狙いどおりの流れを作れる" },
+];
+function findSynergy(a, b) {
+  return SYNERGIES.find(s => (s.pair[0]===a && s.pair[1]===b) || (s.pair[0]===b && s.pair[1]===a)) || null;
+}
+
+/* ============================================================
+   敵・ステージ（SRPG版を流用）
+============================================================ */
+const ENEMY_TYPES = {
+  slime:   { name:"ネタ切れスライム", emoji:"🫠", hp:16, atk:5, /* img:"" */ },
+  beast:   { name:"スランプ獣",       emoji:"👾", hp:24, atk:6 },
+  golem:   { name:"締切りゴーレム",   emoji:"🗿", hp:36, atk:8 },
+  phoenix: { name:"炎上フェニックス", emoji:"🔥", hp:26, atk:7 },
+  king:    { name:"マンネリ大魔王",   emoji:"👹", hp:70, atk:9, boss:true },
+};
+const STAGES = [
+  { name:"第1章 白紙の平原", theme:0, deco:"🪨", /* bg:"" */
+    intro:"真っ白な原稿用紙の平原に、ネタ切れスライムが湧いた。まずは小手調べだ。",
+    enemies:["slime","slime"] },
+  { name:"第2章 スランプの森", theme:1, deco:"🌲",
+    intro:"描けない、進まない…スランプの森でスランプ獣が待ち構える。",
+    enemies:["slime","beast","slime"] },
+  { name:"第3章 締切りの砦", theme:2, deco:"🧱",
+    intro:"迫りくる締切り。硬い締切りゴーレムに、回復をまじえて挑め。",
+    enemies:["beast","golem","beast"] },
+  { name:"第4章 炎上の火山", theme:3, deco:"🌋",
+    intro:"SNS大炎上。炎上フェニックスは手数が多い。連携で押し切れ。",
+    enemies:["phoenix","phoenix","golem"] },
+  { name:"最終章 マンネリ魔王城", theme:4, deco:"🕯️",
+    intro:"すべての創作者の宿敵、マンネリ大魔王。学んだ技のすべてをぶつけろ。",
+    enemies:["beast","phoenix","golem","king"] },
+];
+
+/* ============================================================
+   セーブ
+============================================================ */
+const SAVE_KEY = "mangaDeckBattle_v1";
+const HAND_SIZE = 5, MAX_ENERGY = 3, DECK_MIN = 6, DECK_MAX = 12;
+
+let save = loadSave() || newSave();
+function newSave() {
+  const starter = ALL_IDS.filter(id => CARDS[id].unlock === 0).slice(0, DECK_MAX);
+  return { cleared: 0, level: 1, qIdx: {}, deck: starter };
+}
+function loadSave() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return null;
+    const s = JSON.parse(raw);
+    if (!s || typeof s.level !== "number") return null;
+    if (!Array.isArray(s.deck)) s.deck = [];
+    s.deck = s.deck.filter(id => CARDS[id]);      // 消えたスキルを掃除
+    return s;
+  } catch { return null; }
+}
+function persist() { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }
+function isUnlocked(id) { return CARDS[id].unlock <= save.cleared; }
+
+/* ============================================================
+   ユーティリティ
+============================================================ */
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function rand(n) { return Math.floor(Math.random() * n); }
+function shuffle(a) { for (let i=a.length-1;i>0;i--){ const j=rand(i+1); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function toast(msg) {
+  const el = document.createElement("div");
+  el.className = "toast"; el.textContent = msg;
+  document.body.appendChild(el); setTimeout(() => el.remove(), 2100);
+}
+function getQuiz(skillId) {
+  const bank = QUIZ[skillId];
+  if (!bank || !bank.length) return null;
+  const i = (save.qIdx[skillId] || 0) % bank.length;
+  save.qIdx[skillId] = i + 1; persist();
+  return bank[i];
+}
+function levelBonus() { return save.level - 1; }
+function playerMaxHp() { return 70 + (save.level - 1) * 8; }
+
+/* カード見た目のHTML（仮画像対応） */
+function cardArtHtml(c) {
+  if (c.img) return `<img src="${c.img}" alt="">`;
+  return `<span class="ph-emoji">${c.emoji}</span><span class="ph-tag">仮</span>`;
+}
+function cardHtml(c, extraClass) {
+  const powTxt = c.type === "heal" ? `回復 ${c.power + levelBonus()}` : `威力 ${c.power + levelBonus()}`;
+  return (
+    `<div class="card sys${c.sys} ${extraClass||""}" data-id="${c.id}">` +
+      `<div class="cost">${c.cost}</div>` +
+      `<div class="type-icon">${c.type === "heal" ? "✚" : "⚔"}</div>` +
+      `<div class="art" style="background:${SYS[c.sys].grad}">${cardArtHtml(c)}</div>` +
+      `<div class="cname">${c.name}</div>` +
+      `<div class="csys" style="color:${SYS[c.sys].color}">${SYS[c.sys].name}</div>` +
+      `<div class="cbody">${c.flavor}</div>` +
+      `<div class="cpow ${c.type === "heal" ? "heal" : ""}">${powTxt}</div>` +
+    `</div>`
+  );
+}
+
+/* ============================================================
+   バトル状態
+============================================================ */
+let battle = null;
+
+function startStage(idx) {
+  if (save.deck.length < DECK_MIN) { toast(`デッキは${DECK_MIN}枚以上にしてね`); return; }
+  const stg = STAGES[idx];
+  const hpBonus = idx * 4, atkBonus = Math.floor(idx / 2);
+  const enemies = stg.enemies.map((t, i) => {
+    const base = ENEMY_TYPES[t];
+    return { ...base, uid: "e" + i,
+      maxHp: base.hp + hpBonus, hp: base.hp + hpBonus, atk: base.atk + atkBonus, alive: true };
+  });
+  battle = {
+    stageIdx: idx, stage: stg, enemies,
+    hp: playerMaxHp(), maxHp: playerMaxHp(),
+    energy: MAX_ENERGY, turn: 1, busy: false,
+    drawPile: shuffle(save.deck.slice()), discardPile: [], hand: [],
+    target: enemies.find(e => e.alive)?.uid || null,
+    lastSys: null, comboStreak: 0, lastCardId: null,
+    log: [],
+  };
+  drawNewHand();
+  blog("🏁 " + stg.name + " ── " + stg.intro);
+  $("screen-home").style.display = "none";
+  $("screen-battle").style.display = "block";
+  buildBoard();
+  render();
+  showBanner(stg.name, "BATTLE START", "");
+}
+
+function blog(msg) {
+  if (!battle) return;
+  battle.log.unshift(msg);
+  if (battle.log.length > 30) battle.log.length = 30;
+}
+
+function drawCard() {
+  if (battle.drawPile.length === 0) {
+    if (battle.discardPile.length === 0) return null;
+    battle.drawPile = shuffle(battle.discardPile);
+    battle.discardPile = [];
+  }
+  return battle.drawPile.pop();
+}
+function drawNewHand() {
+  battle.discardPile.push(...battle.hand);
+  battle.hand = [];
+  for (let i = 0; i < HAND_SIZE; i++) {
+    const id = drawCard();
+    if (id) battle.hand.push(id);
+  }
+}
+
+/* ============================================================
+   ボード構築・描画
+============================================================ */
+function buildBoard() {
+  const board = $("board");
+  board.className = "board theme-" + battle.stage.theme;
+  if (battle.stage.bg) board.style.backgroundImage = `url(${battle.stage.bg})`;
+  else board.style.backgroundImage = "";
+}
+
+function enemyIntent(e) {
+  return `⚔ ${e.atk}`;
+}
+function renderEnemies() {
+  const row = $("enemy-row");
+  row.innerHTML = "";
+  battle.enemies.forEach(e => {
+    const el = document.createElement("div");
+    el.className = "enemy" + (e.boss ? " boss" : "") + (!e.alive ? " dead" : "") + (battle.target === e.uid ? " targeted" : "");
+    el.dataset.uid = e.uid;
+    const art = e.img ? `<img src="${e.img}" alt="">` : `<span class="eemoji">${e.emoji}</span>`;
+    el.innerHTML =
+      (e.alive ? `<div class="intent">${enemyIntent(e)}</div>` : "") +
+      `<div class="esprite">${art}</div>` +
+      `<div class="ename">${e.name}</div>` +
+      `<div class="ehp"><i style="width:${Math.max(0,e.hp/e.maxHp*100)}%"></i></div>` +
+      `<div class="ehp-num">${Math.max(0,e.hp)}/${e.maxHp}</div>`;
+    if (e.alive) el.addEventListener("click", () => { battle.target = e.uid; renderEnemies(); });
+    row.appendChild(el);
+  });
+}
+
+function render() {
+  $("hd-level").textContent = save.level;
+  $("hd-cleared").textContent = save.cleared;
+  $("hd-cards").textContent = ALL_IDS.filter(isUnlocked).length;
+  $("bt-name").textContent = battle.stage.name;
+  $("bt-turn").textContent = battle.turn;
+
+  renderEnemies();
+
+  // プレイヤー
+  $("php-fill").style.width = Math.max(0, battle.hp / battle.maxHp * 100) + "%";
+  $("php-num").textContent = Math.max(0, battle.hp);
+  $("php-max").textContent = battle.maxHp;
+
+  // エネルギー
+  const orbs = $("orbs"); orbs.innerHTML = "";
+  for (let i = 0; i < MAX_ENERGY; i++) {
+    const o = document.createElement("div");
+    o.className = "orb" + (i >= battle.energy ? " spent" : "");
+    orbs.appendChild(o);
+  }
+
+  // 連携メーター
+  const mult = comboMult();
+  $("combo-val").textContent = "×" + mult.toFixed(1);
+  $("combo-val").classList.toggle("hot", mult >= 1.4);
+  $("combo-note").textContent = battle.comboStreak >= 2 && battle.lastSys != null
+    ? `${SYS[battle.lastSys].name} ${battle.comboStreak}連鎖`
+    : "同系統を続けると倍率UP";
+
+  // 山札・捨札
+  $("draw-num").textContent = battle.drawPile.length;
+  $("disc-num").textContent = battle.discardPile.length;
+
+  renderHand();
+  $("blog").innerHTML = battle.log.map(m => `<p>${m}</p>`).join("");
+}
+
+function comboMult() {
+  if (battle.comboStreak < 2) return 1;
+  return Math.min(2, 1 + (battle.comboStreak - 1) * 0.2);
+}
+
+function renderHand() {
+  const hand = $("hand");
+  hand.innerHTML = "";
+  battle.hand.forEach((id, i) => {
+    const c = CARDS[id];
+    const playable = c.cost <= battle.energy && !battle.busy;
+    const wrap = document.createElement("div");
+    wrap.innerHTML = cardHtml(c, playable ? "playable" : "unplayable");
+    const el = wrap.firstChild;
+    if (playable) el.addEventListener("click", () => tryPlay(i));
+    hand.appendChild(el);
+  });
+  if (battle.hand.length === 0) hand.innerHTML = `<div style="color:var(--ivory-dim);font-size:12px;padding:40px;">手札がない。ターンを終了しよう。</div>`;
+}
+
+/* ============================================================
+   演出
+============================================================ */
+function showBanner(main, sub, cls) {
+  const board = $("board");
+  const old = board.querySelector(".banner");
+  if (old) old.remove();
+  const b = document.createElement("div");
+  b.className = "banner " + (cls || "");
+  b.innerHTML = `<span class="btext">${main}<small>${sub || ""}</small></span>`;
+  board.appendChild(b);
+  setTimeout(() => b.remove(), 1500);
+}
+function enemyElem(uid) { return $("enemy-row").querySelector(`.enemy[data-uid="${uid}"]`); }
+function floatOn(targetEl, text, cls) {
+  const layer = $("float-layer"), board = $("board");
+  const br = board.getBoundingClientRect(), tr = targetEl.getBoundingClientRect();
+  const el = document.createElement("span");
+  el.className = "dmg-float " + (cls || "");
+  el.textContent = text;
+  el.style.left = (tr.left - br.left + tr.width / 2) + "px";
+  el.style.top = (tr.top - br.top + 10) + "px";
+  layer.appendChild(el);
+  setTimeout(() => el.remove(), 1000);
+}
+function hitFlashEnemy(uid) {
+  const el = enemyElem(uid); if (!el) return;
+  el.classList.remove("hit"); void el.offsetWidth; el.classList.add("hit");
+  const board = $("board"); board.classList.remove("shake"); void board.offsetWidth; board.classList.add("shake");
+}
+function flashPlayer() {
+  const board = $("board"); board.classList.remove("shake"); void board.offsetWidth; board.classList.add("shake");
+}
+
+/* ============================================================
+   カードを出す → クイズ
+============================================================ */
+let pending = null, quizDone = false;
+
+function tryPlay(handIndex) {
+  if (!battle || battle.busy) return;
+  const id = battle.hand[handIndex];
+  const c = CARDS[id];
+  if (c.cost > battle.energy) { toast("エネルギーが足りない"); return; }
+
+  let target = null;
+  if (c.type === "atk") {
+    const alive = battle.enemies.filter(e => e.alive);
+    if (alive.length === 0) return;
+    target = battle.enemies.find(e => e.uid === battle.target && e.alive) || alive[0];
+    battle.target = target.uid;
+  }
+  pending = { handIndex, id, target: target ? target.uid : null };
+
+  const q = getQuiz(id);
+  if (!q) { resolvePlay(true, true); return; }   // クイズが無いスキルは自動成功
+  openQuiz(
+    (c.type === "heal" ? "✚ " : "⚔ ") + c.name,
+    "【" + SKILL_NAMES[id] + "】正解で会心の" + (c.type === "heal" ? "回復" : "一撃"),
+    q
+  );
+}
+
+function openQuiz(title, tag, q) {
+  quizDone = false;
+  $("quiz-title").textContent = title;
+  $("quiz-skill").textContent = tag;
+  $("quiz-q").textContent = q.q;
+  const box = $("quiz-choices"); box.innerHTML = "";
+  const order = q.choices.map((_, i) => i).sort(() => Math.random() - 0.5);
+  order.forEach(i => {
+    const b = document.createElement("button");
+    b.className = "choice-btn"; b.textContent = q.choices[i];
+    b.addEventListener("click", () => onQuizAnswer(b, i === q.answer, q, box));
+    box.appendChild(b);
+  });
+  $("quiz-explain").style.display = "none";
+  $("quiz-close").style.display = "none";
+  $("quiz-modal").classList.add("show");
+}
+
+function onQuizAnswer(btn, correct, q, box) {
+  if (quizDone) return;
+  quizDone = true;
+  [...box.children].forEach(b => { b.disabled = true; });
+  btn.classList.add(correct ? "correct" : "wrong");
+  if (!correct) {
+    [...box.children].forEach(b => { if (b.textContent === q.choices[q.answer]) b.classList.add("correct"); });
+  }
+  let head;
+  if (pending) {
+    head = correct ? "会心！ 技が冴えわたる。" : "おしい…だが解説で学べたからよし。";
+    pending.correct = correct;
+  } else {
+    head = correct ? "正解！ 知識が身についた。" : "おしい！ だが解説で学べたからよし。";
+  }
+  const ex = $("quiz-explain");
+  ex.innerHTML = `<div class="head">${correct ? "🎉 " : "💦 "}${head}</div>` + q.exp;
+  ex.style.display = "block";
+  $("quiz-close").style.display = "inline-block";
+}
+
+$("quiz-close").addEventListener("click", () => {
+  $("quiz-modal").classList.remove("show");
+  if (!pending) return;                 // 道場
+  const { correct } = pending;
+  resolvePlay(correct, false);
+});
+
+/* クイズ後、効果を適用（連携・必殺コンボ計算） */
+function resolvePlay(correct, silentAuto) {
+  const p = pending; pending = null;
+  const c = CARDS[p.id];
+
+  // 手札から出す／エネルギー消費／捨札へ
+  const hi = battle.hand.indexOf(p.id);
+  if (hi >= 0) battle.hand.splice(hi, 1);
+  battle.energy -= c.cost;
+  battle.discardPile.push(p.id);
+
+  // 連携（同系統の連鎖）
+  if (battle.lastSys === c.sys) battle.comboStreak += 1;
+  else battle.comboStreak = 1;
+  battle.lastSys = c.sys;
+  const cmult = comboMult();
+
+  // 必殺コンボ（直前カードとの相性）
+  const syn = battle.lastCardId ? findSynergy(battle.lastCardId, p.id) : null;
+  battle.lastCardId = p.id;
+
+  const quizMult = correct ? 1.6 : 0.6;
+  const synMult = syn ? 1.5 : 1;
+  const base = c.power + levelBonus();
+  let amount = Math.max(1, Math.round(base * quizMult * cmult * synMult) + rand(3) - 1);
+
+  render();
+
+  if (c.type === "heal") {
+    battle.hp = Math.min(battle.maxHp, battle.hp + amount);
+    blog(`✚ 「${c.name}」でHPを${amount}回復${correct ? "（会心）" : ""}${cmult>1?`／連携×${cmult.toFixed(1)}`:""}`);
+    const av = $("p-avatar");
+    floatOn(av, "+" + amount, "heal");
+  } else {
+    const tgt = battle.enemies.find(e => e.uid === p.target) || battle.enemies.find(e => e.alive);
+    if (tgt) {
+      tgt.hp -= amount;
+      blog(`⚔ 「${c.name}」→ ${tgt.name}に${amount}ダメージ${correct ? "（会心）" : ""}${cmult>1?`／連携×${cmult.toFixed(1)}`:""}`);
+      renderEnemies();
+      hitFlashEnemy(tgt.uid);
+      const el = enemyElem(tgt.uid);
+      if (el) floatOn(el, amount, correct ? "crit" : "");
+      if (tgt.hp <= 0) {
+        tgt.alive = false;
+        blog(`💥 ${tgt.name}を倒した！`);
+        if (battle.target === tgt.uid) {
+          const nx = battle.enemies.find(e => e.alive);
+          battle.target = nx ? nx.uid : null;
+        }
+      }
+    }
+  }
+
+  if (syn) {
+    showBanner("必殺コンボ ── " + syn.name, syn.teach, "combo");
+    blog(`✨ 必殺コンボ【${syn.name}】：${syn.teach}`);
+  } else if (cmult >= 1.4) {
+    showBanner("連携 ×" + cmult.toFixed(1), SYS[c.sys].name + "の連鎖", "combo");
+  }
+
+  render();
+
+  // 勝敗チェック
+  if (battle.enemies.every(e => !e.alive)) { battle.busy = true; setTimeout(victory, 650); return; }
+
+  // エネルギー切れ・手札切れなら自動でターン終了を促す
+  const canPlay = battle.hand.some(id => CARDS[id].cost <= battle.energy);
+  if (!canPlay) { $("hand-sub").textContent = "出せるカードがない。「ターン終了」で敵の番へ。"; }
+}
+
+/* ============================================================
+   ターン終了 → 敵の攻撃
+============================================================ */
+async function endTurn() {
+  if (!battle || battle.busy) return;
+  battle.busy = true;
+  render();
+  showBanner("ENEMY TURN", "敵の攻撃", "red");
+  await sleep(1000);
+
+  for (const e of battle.enemies) {
+    if (!e.alive) continue;
+    const dmg = Math.max(1, e.atk + rand(3) - 1);
+    battle.hp -= dmg;
+    blog(`👿 ${e.name}の攻撃！ ${dmg}ダメージ`);
+    render();
+    flashPlayer();
+    floatOn($("p-avatar"), dmg, "");
+    await sleep(560);
+    if (battle.hp <= 0) { battle.hp = 0; render(); await sleep(300); defeat(); return; }
+  }
+
+  // 新ターン
+  battle.turn += 1;
+  battle.energy = MAX_ENERGY;
+  battle.comboStreak = 0; battle.lastSys = null; battle.lastCardId = null;
+  drawNewHand();
+  battle.busy = false;
+  $("hand-sub").textContent = "カードをクリックして技を出す。攻撃したい敵はクリックで選択。";
+  blog(`── TURN ${battle.turn} ──`);
+  render();
+  showBanner("YOUR TURN", "あなたの番", "");
+}
+
+/* ============================================================
+   勝敗
+============================================================ */
+let resultAction = null;
+
+function victory() {
+  const idx = battle.stageIdx;
+  const wasCleared = idx < save.cleared;
+  const isFinal = idx === STAGES.length - 1;
+  const beforeCleared = save.cleared;
+  if (!wasCleared) save.cleared = Math.max(save.cleared, idx + 1);
+  const before = save.level;
+  if (save.level < 10) save.level += 1;
+
+  // 新規解放カード
+  const newlyUnlocked = ALL_IDS.filter(id => CARDS[id].unlock > beforeCleared && CARDS[id].unlock <= save.cleared);
+  persist();
+
+  $("res-big").textContent = "─ 勝利 ─";
+  $("res-body").innerHTML =
+    `${battle.stage.name} を制覇した。<br>` +
+    (save.level > before ? `作家レベルが <b>Lv.${save.level}</b> に上がった！（HP・威力アップ）<br>` : "") +
+    (newlyUnlocked.length ? `新カード解放：<b>${newlyUnlocked.map(id => CARDS[id].name).join("、")}</b><br>` : "") +
+    (isFinal ? "" : "デッキを鍛えて次の章へ。");
+  resultAction = () => { if (isFinal && !wasCleared) showEnding(); else backHome(); };
+  $("result-modal").classList.add("show");
+}
+function defeat() {
+  battle.busy = true;
+  $("res-big").textContent = "─ 敗北 ─";
+  $("res-body").innerHTML =
+    "力尽きた…。だが、学んだ知識は失われない。<br>" +
+    "クイズに正解して会心を重ね、<b>同系統や相性のいい技を連携</b>させるのが勝利のコツだ。";
+  resultAction = backHome;
+  $("result-modal").classList.add("show");
+}
+function showEnding() {
+  $("res-big").textContent = "─ 完 ─";
+  $("res-body").innerHTML =
+    "マンネリ大魔王は砕け散り、世界に物語が還ってきた。<br><br>" +
+    "あなたは<b>「設計する力」「読ませる力」「仕上げる力」</b>を組み合わせて戦い抜いた。<br>" +
+    "🎉 おめでとう。ここで身につけた『使いこなし』を、本物のマンガ制作で振るう時だ。";
+  resultAction = backHome;
+  $("result-modal").classList.add("show");
+}
+$("res-close").addEventListener("click", () => {
+  $("result-modal").classList.remove("show");
+  const fn = resultAction; resultAction = null;
+  if (fn) fn();
+});
+function backHome() {
+  battle = null;
+  $("screen-battle").style.display = "none";
+  $("screen-home").style.display = "block";
+  renderHome();
+}
+
+/* ============================================================
+   道場（自由修行）
+============================================================ */
+$("btn-dojo").addEventListener("click", () => {
+  pending = null;
+  const ids = Object.keys(QUIZ);
+  const sid = ids[rand(ids.length)];
+  openQuiz("道場 ─ 自由修行", "【" + SKILL_NAMES[sid] + "】の知識", getQuiz(sid));
+});
+
+/* ============================================================
+   ホーム画面（ステージ＋デッキ編成）
+============================================================ */
+const THUMB_BG = [
+  "linear-gradient(160deg,#a8cfe8,#ead9b0)","linear-gradient(160deg,#3c6b58,#6f9468)",
+  "linear-gradient(160deg,#f0a35e,#9c4a4a)","linear-gradient(160deg,#6e2222,#b8452a)",
+  "linear-gradient(160deg,#1e1a3e,#3a2a5c)",
+];
+function renderHome() { renderStages(); renderCollection(); render_hd(); }
+function render_hd() {
+  $("hd-level").textContent = save.level;
+  $("hd-cleared").textContent = save.cleared;
+  $("hd-cards").textContent = ALL_IDS.filter(isUnlocked).length;
+}
+function renderStages() {
+  const list = $("stage-list"); list.innerHTML = "";
+  STAGES.forEach((stg, i) => {
+    const locked = i > save.cleared;
+    const done = i < save.cleared;
+    const card = document.createElement("div");
+    card.className = "stage-card" + (locked ? " locked" : "");
+    const thumbStyle = stg.bg ? `background-image:url(${stg.bg})` : `background:${THUMB_BG[i]}`;
+    card.innerHTML =
+      `<div class="stage-thumb" style="${thumbStyle}">${locked ? "🔒" : (stg.bg ? "" : stg.deco)}</div>` +
+      `<div class="stage-body">` +
+      `<div class="sname">${done ? '<span class="clear-mark">★</span>' : ""}${stg.name}</div>` +
+      `<div class="sinfo">${stg.intro}<br>敵：${stg.enemies.map(t => ENEMY_TYPES[t].emoji + ENEMY_TYPES[t].name).join("、")}</div>` +
+      `</div>`;
+    const btn = document.createElement("button");
+    btn.className = "gbtn"; btn.textContent = locked ? "未開放" : (done ? "再挑戦" : "挑戦");
+    btn.disabled = locked;
+    if (!locked) btn.addEventListener("click", () => startStage(i));
+    card.appendChild(btn);
+    list.appendChild(card);
+  });
+}
+function renderCollection() {
+  $("deck-num").textContent = save.deck.length;
+  const col = $("collection"); col.innerHTML = "";
+  // 系統順→解放章順に並べる
+  const ids = ALL_IDS.slice().sort((a,b) =>
+    CARDS[a].sys - CARDS[b].sys || CARDS[a].unlock - CARDS[b].unlock || CARDS[a].cost - CARDS[b].cost);
+  ids.forEach(id => {
+    const c = CARDS[id];
+    const unlocked = isUnlocked(id);
+    const inDeck = save.deck.includes(id);
+    const wrap = document.createElement("div");
+    wrap.innerHTML = cardHtml(c, "mini" + (inDeck ? " in-deck" : "") + (unlocked ? "" : " locked"));
+    const el = wrap.firstChild;
+    if (inDeck) el.insertAdjacentHTML("beforeend", `<div class="deck-badge">✔ デッキ</div>`);
+    if (!unlocked) el.insertAdjacentHTML("beforeend",
+      `<div class="lock-tag"><span class="lk">🔒</span>第${c.unlock+1}章で解放</div>`);
+    if (unlocked) el.addEventListener("click", () => toggleDeck(id));
+    col.appendChild(el);
+  });
+}
+function toggleDeck(id) {
+  const i = save.deck.indexOf(id);
+  if (i >= 0) {
+    if (save.deck.length <= DECK_MIN) { toast(`デッキは${DECK_MIN}枚以上必要`); return; }
+    save.deck.splice(i, 1);
+  } else {
+    if (save.deck.length >= DECK_MAX) { toast(`デッキは最大${DECK_MAX}枚`); return; }
+    save.deck.push(id);
+  }
+  persist();
+  renderCollection();
+}
+$("btn-auto-deck").addEventListener("click", () => {
+  const unlocked = ALL_IDS.filter(isUnlocked);
+  // 攻撃多め＋回復を1〜2枚、コストばらけるように上限まで
+  const heals = unlocked.filter(id => CARDS[id].type === "heal");
+  const atks = unlocked.filter(id => CARDS[id].type === "atk")
+    .sort((a,b) => CARDS[a].cost - CARDS[b].cost);
+  const deck = [];
+  heals.slice(0, 2).forEach(id => deck.push(id));
+  for (const id of atks) { if (deck.length >= DECK_MAX) break; deck.push(id); }
+  save.deck = deck.slice(0, DECK_MAX);
+  if (save.deck.length < DECK_MIN) save.deck = unlocked.slice(0, DECK_MIN);
+  persist(); renderCollection();
+  toast("おまかせで編成したよ");
+});
+
+/* ============================================================
+   ボタン
+============================================================ */
+$("btn-endturn").addEventListener("click", endTurn);
+$("btn-retreat").addEventListener("click", () => {
+  if (!battle || battle.busy) return;
+  if (confirm("撤退する？（この挑戦は終了）")) backHome();
+});
+$("btn-reset").addEventListener("click", () => {
+  if (confirm("ほんとうに最初からやり直す？（レベル・進行・デッキが消える）")) {
+    save = newSave(); persist(); renderHome(); toast("新しい物語がはじまった");
+  }
+});
+
+/* ============================================================
+   起動
+============================================================ */
+renderHome();
+</script>
+</body>
+</html>

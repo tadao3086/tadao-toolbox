@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>マンガプロンプト発射台（合体版）</title>
+<style>
+  :root{ --bg:#f5f5f4; --card:#fff; --ink:#1f2937; --sub:#6b7280;
+         --line:#e5e7eb; --pink:#fdebd0; --pinkink:#9a5b0d;
+         --blue:#d6eaf8; --blueink:#1d5f8a; --accent:#2f4f4f; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font-family:-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;}
+  header{position:sticky;top:0;z-index:10;background:var(--accent);color:#fff;
+         padding:14px 18px 12px;box-shadow:0 2px 8px rgba(0,0,0,.12);
+         display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  header .titlewrap{flex:1;min-width:200px}
+  header h1{margin:0 0 2px;font-size:18px}
+  header .sub{font-size:12px;opacity:.85}
+  .drivebtn{display:inline-flex;align-items:center;gap:6px;background:#fff;color:var(--accent);
+            text-decoration:none;font-weight:700;font-size:13px;padding:9px 14px;border-radius:10px;
+            white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+  .drivebtn:hover{background:#eef2f2}
+  .status{max-width:1100px;margin:10px auto 0;padding:0 16px;font-size:12px;color:var(--sub)}
+  .status .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
+  .dot.live{background:#16a34a}.dot.load{background:#f59e0b}.dot.off{background:#9ca3af}
+  .reload{margin-left:10px;border:1px solid var(--line);background:#fff;border-radius:7px;
+          padding:3px 9px;font-size:12px;cursor:pointer;color:var(--accent)}
+  .workspace{max-width:1100px;margin:14px auto 0;padding:18px;background:var(--card);
+             border:1px solid var(--line);border-radius:16px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+  .ws-title{font-weight:800;font-size:17px;margin:0 0 4px}
+  .ws-desc{font-size:12px;color:var(--sub);margin:0 0 14px}
+  .step{font-size:13px;font-weight:800;margin:0 0 6px}
+  .step .num{display:inline-block;background:var(--accent);color:#fff;border-radius:50%;
+             width:20px;height:20px;line-height:20px;text-align:center;font-size:12px;margin-right:6px}
+  .selhint{font-size:12px;color:var(--sub);margin:6px 0 0}
+  select,textarea,input[type="text"]{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;
+                  font-size:13px;font-family:inherit;color:var(--ink);background:#fff}
+  textarea{resize:vertical;line-height:1.55}
+  #nemeInput{min-height:170px}
+  #comboOut{min-height:210px;background:#fafafa}
+  #imagePromptOut{min-height:260px;background:#fafafa}
+  .ws-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px}
+  .ws-grid.tight{align-items:end}
+  .ws-foot{display:flex;align-items:center;gap:12px;margin-top:14px;flex-wrap:wrap}
+  .bigcopy{background:var(--accent);color:#fff;border:0;border-radius:11px;padding:13px 22px;
+           font-size:15px;font-weight:800;cursor:pointer;transition:background .15s}
+  .bigcopy:hover{background:#24403f}
+  .bigcopy.done{background:#16a34a}
+  .linkbtn{background:#fff;border:1px solid var(--line);border-radius:9px;padding:11px 13px;
+           font-size:13px;cursor:pointer;color:var(--sub)}
+  .ccount{font-size:12px;color:var(--sub);margin-left:auto}
+  .fieldlabel{font-size:12px;font-weight:800;margin:0 0 6px;color:var(--ink)}
+  .minihelp{font-size:11px;color:var(--sub);line-height:1.45;margin:6px 0 0}
+  .noticebox{border:1px solid var(--line);border-radius:10px;background:#fafafa;
+             padding:12px;font-size:13px;line-height:1.55;color:var(--ink);min-height:128px}
+  .fullrow{grid-column:1/-1}
+  @media(max-width:680px){ .ws-grid{grid-template-columns:1fr} }
+
+  .cardsHead{max-width:1100px;margin:26px auto 0;padding:0 16px;font-weight:800;font-size:15px}
+  .controls{max-width:1100px;margin:10px auto 0;padding:0 16px;display:flex;
+            flex-wrap:wrap;gap:8px;align-items:center}
+  #q{flex:1 1 220px;min-width:160px;padding:9px 12px;border:1px solid var(--line);
+     border-radius:9px;font-size:14px}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#fff}
+  .seg button{border:0;background:#fff;padding:9px 12px;font-size:13px;cursor:pointer;color:var(--sub)}
+  .seg button.on{background:var(--accent);color:#fff}
+  .count{font-size:12px;color:var(--sub);margin-left:auto}
+  main{max-width:1100px;margin:14px auto 50px;padding:0 16px;
+       display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+        padding:14px;display:flex;flex-direction:column;gap:9px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  .toprow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .badge{font-size:11px;padding:2px 9px;border-radius:999px;font-weight:700}
+  .badge.gafu{background:var(--pink);color:var(--pinkink)}
+  .badge.sagyo{background:var(--blue);color:var(--blueink)}
+  .badge.oneshot{background:#dcfce7;color:#166534}
+  .badge.other{background:#eee;color:#555}
+  .name{font-weight:700;font-size:15px;flex:1}
+  .fav{color:#f0a500;font-size:13px;letter-spacing:1px}
+  .use{font-size:13px;color:var(--ink);line-height:1.5}
+  .meta{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{font-size:11px;color:var(--sub);background:#f3f4f6;border-radius:7px;padding:3px 8px}
+  .memo{font-size:11px;color:var(--sub);line-height:1.45}
+  .actions{display:flex;gap:8px;margin-top:2px}
+  .copy{flex:1;border:0;background:var(--accent);color:#fff;padding:10px;border-radius:9px;
+        font-size:14px;font-weight:700;cursor:pointer}
+  .copy:hover{background:#24403f}.copy.done{background:#16a34a}
+  .peek{border:1px solid var(--line);background:#fff;color:var(--sub);border-radius:9px;
+        padding:10px 12px;font-size:13px;cursor:pointer}
+  .body{display:none;white-space:pre-wrap;font-size:12px;line-height:1.55;background:#fafafa;
+        border:1px dashed var(--line);border-radius:9px;padding:10px;max-height:280px;overflow:auto}
+  .body.open{display:block}
+  footer{max-width:1100px;margin:0 auto 40px;padding:0 16px;color:var(--sub);font-size:12px;line-height:1.6}
+</style>
+</head>
+<body>
+<header>
+  <div class="titlewrap">
+    <h1>🚀 マンガプロンプト発射台（合体版）</h1>
+    <div class="sub">プロンプト＋ネームを合体して、ワンクリックでコピー</div>
+  </div>
+  <a class="drivebtn" href="https://drive.google.com/drive/folders/1tX9ssXXG0wsRbkmuftaboI3HqVAaHn0N?usp=sharing" target="_blank" rel="noopener">📁 画像フォルダを開く</a>
+</header>
+
+<div class="status">
+  <span id="dot" class="dot load"></span><span id="statusText">スプレッドシートを読み込み中…</span>
+  <button class="reload" id="reload">↻ 最新に更新</button>
+</div>
+
+<section class="workspace">
+  <div class="ws-title">🧩 プロンプト＋ネーム 合体メーカー</div>
+  <p class="ws-desc">①画風プロンプトを選ぶ → ②ネームを貼る → ③下の「合体テキスト」をコピーしてChatGPTへ。</p>
+
+  <div class="step"><span class="num">1</span>画風プロンプトを選ぶ</div>
+  <select id="tplSelect"></select>
+  <p class="selhint" id="selHint"></p>
+
+  <div class="ws-grid">
+    <div>
+      <div class="step"><span class="num">2</span>ネームを貼る</div>
+      <textarea id="nemeInput" placeholder="別の場所で作ったAIマンガ用のネームを、ここに貼り付け"></textarea>
+    </div>
+    <div>
+      <div class="step"><span class="num">3</span>合体テキスト（これをコピー）</div>
+      <textarea id="comboOut" readonly placeholder="プロンプトを選んでネームを貼ると、ここに合体結果が出ます"></textarea>
+    </div>
+  </div>
+
+  <div class="ws-foot">
+    <button class="bigcopy" id="comboCopy">📋 合体テキストをコピー</button>
+    <button class="linkbtn" id="nemeClear">ネームを消す</button>
+    <span class="ccount" id="comboCount"></span>
+  </div>
+</section>
+
+<section class="workspace">
+  <div class="ws-title">🎯 1枚絵プロンプトメーカー（静／動）</div>
+  <p class="ws-desc">①印象のタイプを選ぶ → ②大きく見せるメッセージを入れる → ③背景の材料文を入れる → ④画像生成用プロンプトをコピー。</p>
+
+  <div class="ws-grid tight">
+    <div>
+      <div class="step"><span class="num">1</span>印象のタイプを選ぶ</div>
+      <select id="impactSelect">
+        <option value="still">静の圧：余白・視線・象徴で刺す</option>
+        <option value="dynamic">動の圧：前後差・勢い・集中線で刺す</option>
+      </select>
+      <p class="minihelp">共通ルールは自動で入ります。静と動は混ぜず、選んだ方だけを強く出します。</p>
+    </div>
+    <div>
+      <div class="step"><span class="num">2</span>大きく見せるメッセージ</div>
+      <textarea id="messageInput" rows="2" placeholder="例：感情を揺さぶる「V字回復」のコントラスト"></textarea>
+      <p class="minihelp">画像内で大きく見せたいコピーです。日本語文字が崩れる場合は、文字なし設定で後入れできます。</p>
+    </div>
+  </div>
+
+  <div class="ws-grid">
+    <div>
+      <p class="fieldlabel">キャラクター画像</p>
+      <div class="noticebox">
+        画像生成時に、自作キャラ画像を一緒に添付してください。<br>
+        完成プロンプトには「添付キャラ画像の容姿・髪型・服装・配色・特徴を忠実に再現する」指示が自動で入ります。
+      </div>
+    </div>
+    <div>
+      <p class="fieldlabel">テーマ・小物・場所（任意）</p>
+      <textarea id="themeInput" rows="5" placeholder="例：スマホ、付箋、チェックリスト、机、作戦図、都会、竹林、波紋"></textarea>
+    </div>
+  </div>
+
+  <div class="ws-grid">
+    <div class="fullrow">
+      <p class="fieldlabel">背景・雰囲気に反映したい文章（任意）</p>
+      <textarea id="inspirationInput" rows="7" placeholder="例：最初からいい人を描くと、物語は平坦になり読まれません。カタルシスを作るコツは、主人公の初期状態を「冷徹・無関心」など極端にマイナスに振ること。最後に感情の発生を起こすことで、V字の落差が生まれます。"></textarea>
+      <p class="minihelp">この文章は画像内にそのまま文字として入れません。意味を読み取り、背景・配色・光・小物・構図の比喩に変換します。</p>
+    </div>
+  </div>
+
+  <div class="ws-grid tight">
+    <div>
+      <p class="fieldlabel">文字の扱い</p>
+      <select id="letteringSelect">
+        <option value="draw">吹き出し内に一言を入れる</option>
+        <option value="blank">吹き出しは空白にして、文字は後から入れる</option>
+      </select>
+    </div>
+    <div>
+      <p class="fieldlabel">画像生成用プロンプト（これをコピー）</p>
+      <textarea id="imagePromptOut" readonly placeholder="タイプと一言を入れると、ここに完成プロンプトが出ます"></textarea>
+    </div>
+  </div>
+
+  <div class="ws-foot">
+    <button class="bigcopy" id="imagePromptCopy">📋 画像プロンプトをコピー</button>
+    <button class="linkbtn" id="imagePromptClear">入力を消す</button>
+    <span class="ccount" id="imagePromptCount"></span>
+  </div>
+</section>
+
+<div class="cardsHead">📚 プロンプト一覧（個別にコピーしたいとき）</div>
+<div class="controls">
+  <input id="q" type="search" placeholder="🔍 名前・用途・中身で検索">
+  <div class="seg" id="catSeg">
+    <button data-cat="all" class="on">すべて</button>
+    <button data-cat="画風系">画風系</button>
+    <button data-cat="作業系">作業系</button>
+    <button data-cat="一枚絵系">1枚絵系</button>
+  </div>
+  <div class="seg" id="sortSeg">
+    <button data-sort="orig" class="on">元の順</button>
+    <button data-sort="fav">お気に入り順</button>
+  </div>
+  <span class="count" id="count"></span>
+</div>
+<main id="grid"></main>
+
+<footer>
+  元データ：Googleスプレッドシート「マンガプロンプト集」。このページは開くたびにスプシの最新を読み込みます。<br>
+  合体ルール：プロンプト内の「#ネーム」または「#シナリオ」の位置にネームを差し込みます（無ければ末尾に追加）。
+</footer>
+
+<script>
+const SHEET_ID = "1EKFrgYH3PqOaYPPtiQcD0OyKJkZwsZWjCgkihQ8e-W8";
+const SHEET_NAME = "プロンプト集";
+const FALLBACK = [{"cat": "画風系", "name": "読ませるマンガ", "fav": "", "use": "ポップで感情を強く運ぶカラー漫画にしたい時", "ratio": "カラー（比率指定なし）", "img": "任意", "body": "読者の視線を強く止める「読ませるマンガ」を生成してください。\n# 目的\nただ情報を説明するマンガではなく、\nキャラクターの感情の高まり・発見・ひらめきによって、\n読者が自然に読み進めたくなるマンガにする。\n「情報を説明する」のではなく、「感情で情報を運ぶ」ことを最優先にする。\n#重要\nセリフ、モノローグは縦書き。\nコマの並び順は日本の漫画のコマ割りに合わせ、右上から左下に読む。\n特にシナリオでコマ指定されていない場合は、文章を要約して3～5コマで漫画を作る。\n## 2コマ漫画の場合、「上→下」の2コマ\n## 3コマ漫画の場合、「上→中→下」か「上→右下→左下」か「右上→左上→下」の3コマ\n## 4コマの場合、「右上→左上→右下→左下」か「上→右中→左中→下」の4コマ\n## 5コマの場合、日本の漫画形式として、右から左・上から下へと自然に読めるコマ割りにしてください。コマの配置や形状は自由ですが、視線誘導だけは日本式の読み順に従わせてください。\n均一なレイアウトではなく、変則的または自由配置のコマ構成でお願いします。\n# 全体の画風\n日本のポップなカラー漫画。\nかわいく親しみやすいデフォルメキャラクター。\nただし、単なるゆるい図解ではなく、\n少年漫画的な勢い、広告漫画的な視線誘導、SNSで目を止める強い演出を加える。\n仕上がりは「やさしい可愛さ」＋「強い演出」の両立。\n# 演出の方向性\n・感情の起伏を大きく見せる\n・発見した瞬間の高揚感を絵で表現する\n・読者が一目でテンションの変化を感じ取れるようにする\n・説明感より、没入感・ライブ感を優先する\n・1コマごとに感情の温度差をはっきりつける\n# キャラクター表現\n・表情の変化を大きくする\n・喜び、疑問、考え込み、ひらめき、確信の流れを明確に\n・目は大きく印象的に、感情が高まる場面では目の輝きや星表現を使う\n・ポーズはやや大げさに、元気よく、身体全体で感情を表現する\n・読者に向かって指差す、手を大きく前に出すなど、前のめりで迫るポーズを効果的に使う\n# 線と描写\n・線は整理されつつも、重要な部分は太く力強く\n・輪郭、表情、手、効果音、吹き出しの重要箇所に強弱をつける\n・主役の顔とアクションが一目で目に飛び込むようにする\n・かわいいだけでなく、勢いと圧を感じる描線にする\n# 色と背景演出\n・背景は、感情に応じた色の演出を入れる\n・発見や成功の場面では黄色・オレンジ系の明るい放射表現\n・思考や内省の場面では青・紫系の落ち着いた空気\n・盛り上がる場面では赤やピンク系の勢いある効果背景\n・感情の起伏がない場合は、背景を少しだけぼかした状態で描写する。\n・色は「装飾」ではなく「感情の温度」を伝えるために使う\n・全体は明るくポップで、コントラストはやや強め\n# 背景・記号表現\n・背景は感情や思考を可視化する場として使う\n・集中線、放射線、キラキラ、擬音、記号、思考マークを効果的に入れる\n・考えている内容は、頭の中のイメージとして浮かぶアイコンや図で表現する\n・小物や記号は「説明ラベル」ではなく、「頭の中が見える演出」として自然に馴染ませる\n# 文字演出\n・日本語のみを使用\n・セリフ、モノローグ、擬音は読みやすく、文字化けなし\n・重要ワードは大きく、目立つ文字で強調\n・効果音は単なる文字ではなく、画面の勢いを支配する“絵としての文字”にする\n・印象的な結論ワードは特に強く見せる\n# 仕上がりの印象\n・「わかりやすい図解マンガ」ではなく、「思わず最後まで読んでしまうマンガ」\n・読者がタイムライン上で一瞬で目を止める\n・保存したくなるより先に、まず“読まされる”\n・情報より先に感情が届く\n・かわいさ、勢い、発見の楽しさが同時に伝わる\n# 注意\n構成を無機質な図解にしないこと。\n静かすぎる説明調にしないこと。\n余白をただ空けるのではなく、感情の圧と視線誘導を持たせること。\n\n#ネーム", "memo": "末尾の「#ネーム」にネームを貼る"}, {"cat": "画風系", "name": "柔らかいテイスト", "fav": "", "use": "水彩レトロ・大人っぽい手描き風にしたい時", "ratio": "9:16 HD／淡い水彩", "img": "要（参照画像）", "body": "読者の視線を強く止める「読ませるマンガ」を生成してください。\n# 目的\nただ情報を説明するマンガではなく、\nキャラクターの感情の高まり・発見・ひらめきによって、\n読者が自然に読み進めたくなるマンガにする。\n「情報を説明する」のではなく、「感情で情報を運ぶ」ことを最優先にする。\n\n\n#重要\nセリフ、モノローグは縦書き。\nコマの並び順は日本の漫画のコマ割りに合わせ、右上から左下に読む。\n特にシナリオでコマ指定されていない場合は、文章を要約して3～5コマで漫画を作る。\n## 2コマ漫画の場合、「上→下」の2コマ\n## 3コマ漫画の場合、「上→中→下」か「上→右下→左下」か「右上→左上→下」の3コマ\n## 4コマの場合、「右上→左上→右下→左下」か「上→右中→左中→下」の4コマ\n## 5コマの場合、日本の漫画形式として、右から左・上から下へと自然に読めるコマ割りにしてください。コマの配置や形状は自由ですが、視線誘導だけは日本式の読み順に従わせてください。\n均一なレイアウトではなく、変則的または自由配置のコマ構成でお願いします。\n\n\n#参照する要素\n添付画像の人物の雰囲気、表情、髪型、服装、ポーズ、全体から伝わるキャラクター性を参考にする。\nただし、添付画像内の文字をそのまま複製しない。ロゴやUI要素もそのまま再現しない。\n\n\n#作画スタイル\n手描き風スタンプイラストテイスト、丸みのあるシンプルでフラットな画風、不均一な手描きの味のある線、、レトロな空気感を持ち、絵本のような温かみがありつつも、大人っぽく洗練された表現にする。\n\n\n影はスクリーントーン、ハッチングやクロスハッチングによる斜線の重なりで表現する。\n線と淡い色だけで構成。\n彩色は淡い水彩風のウォッシュ。\nにじみ、ムラ、紙の風合い、手描きの温度感を残す。\n\n\n#キャラクター表現\n実写そのままではなく、バンドデシネ風の大人っぽいマンガ表現に落とし込む。\nただし、元の人物の印象・雰囲気・アイコン性は保つ。\n\n\n#カラー\n配色は添付した画像を参照する。\n添付画像、背景、全体のUI上で印象的に見える色から、その画像・キャラクターらしいカラーパレットを抽出して使う。\n\n\n添付画像から読み取れるブランドカラー、空気感、明度、彩度、温度感を優先する。\n色数は絞り、リミテッドカラーのように統一感を出す。\n白地の余白を活かし、抜け感のある画面にする。\n添付画像の雰囲気に合わない派手すぎる色や、無関係な色の追加は避ける。\n\n\n#演出・エフェクト\n添付画像から読み取れる人物像や発信テーマを、象徴的な小物・背景モチーフ・視覚エフェクトとして表現する。\n手書き風の吹き出し、短い擬音語、感情を表す線、軽い集中線や余韻のあるフレームを配置する。\nエネルギーよりも、余韻・知性・個性・空気感を重視する。\n\n\n#背景・装飾\n添付画像から読み取れるテーマに合わせて、紙片、メモ、抽象的な図形、手描きの線、ラフなパターン、象徴的な小物を背景に配置する。\n背景は描き込みすぎず、余白を活かす。\n画面全体に水彩紙のようなテクスチャ、わずかなインクのかすれ、手描きの温かみを入れる。\n\n\n【仕上がりイメージ】\n淡い水彩、ラフなペン画、クロスハッチング、白い余白が印象的な仕上がり。\n感情的すぎず、静かでおしゃれ。大人っぽく、知的で、少しアンニュイ。\nアスペクト比 9:16 HD。\n\n\n#ネーム", "memo": "末尾の「#ネーム」にネームを貼る"}, {"cat": "画風系", "name": "ミヤマさん（バンドデシネ風）", "fav": "", "use": "ヨーロッパ調・バンドデシネ風にしたい時", "ratio": "9:16 HD／淡い水彩", "img": "要（プロフィール画像）", "body": "読者の視線を強く止める「読ませるマンガ」を生成してください。\n# 目的\nただ情報を説明するマンガではなく、\nキャラクターの感情の高まり・発見・ひらめきによって、\n読者が自然に読み進めたくなるマンガにする。\n「情報を説明する」のではなく、「感情で情報を運ぶ」ことを最優先にする。\n\n\n#重要\nセリフ、モノローグは縦書き。\nコマの並び順は日本の漫画のコマ割りに合わせ、右上から左下に読む。\n特にシナリオでコマ指定されていない場合は、文章を要約して3～5コマで漫画を作る。\n## 2コマ漫画の場合、「上→下」の2コマ\n## 3コマ漫画の場合、「上→中→下」か「上→右下→左下」か「右上→左上→下」の3コマ\n## 4コマの場合、「右上→左上→右下→左下」か「上→右中→左中→下」の4コマ\n## 5コマの場合、日本の漫画形式として、右から左・上から下へと自然に読めるコマ割りにしてください。コマの配置や形状は自由ですが、視線誘導だけは日本式の読み順に従わせてください。\n均一なレイアウトではなく、変則的または自由配置のコマ構成でお願いします。\n\n\n#参照する要素\n添付画像の人物の雰囲気、表情、髪型、服装、ポーズ、全体から伝わるキャラクター性を参考にする。\nただし、添付画像内の文字をそのまま複製しない。ロゴやUI要素もそのまま再現しない。\n\n\n#作画スタイル\nバンドデシネ風のヨーロピアンコミックスタイル。\nヴィンテージ / レトロな空気感を持ち、絵本のような温かみがありつつも、大人っぽく洗練された表現にする。\n線画はラフな手描き感のあるペン画タッチ。\n強弱のあるかすれた線を使い、均一すぎない自然な手描き感を出す。\n影はスクリーントーンを使わず、ハッチングやクロスハッチングによる斜線の重なりで表現する。\n線と淡い色だけで構成された、レトロでヨーロピアンな画面にする。\n彩色は淡い水彩風のウォッシュ。\nにじみ、ムラ、紙の風合い、手描きの温度感を残す。\nベタ塗りや強すぎるデジタル加工感は避ける。\n\n\n#キャラクター表現\nSNSプロフィール画像の人物をベースに、その人らしさが伝わるキャラクターとして描く。\n実写そのままではなく、バンドデシネ風の大人っぽいマンガ表現に落とし込む。\n西洋風の骨格感、アンニュイな表情、少し余韻のある視線を取り入れる。\nただし、元の人物の印象・雰囲気・アイコン性は保つ。\n\n\n#カラー\n配色は添付した画像を参照する。\n添付画像、背景、全体のUI上で印象的に見える色から、その画像・キャラクターらしいカラーパレットを抽出して使う。\n\n\n添付画像から読み取れるブランドカラー、空気感、明度、彩度、温度感を優先する。\n色数は絞り、リミテッドカラーのように統一感を出す。\n白地の余白を活かし、抜け感のある画面にする。\n添付画像の雰囲気に合わない派手すぎる色や、無関係な色の追加は避ける。\n\n\n#演出・エフェクト\n添付画像から読み取れる人物像や発信テーマを、象徴的な小物・背景モチーフ・視覚エフェクトとして表現する。\n手書き風の吹き出し、短い擬音語、感情を表す線、軽い集中線や余韻のあるフレームを配置する。\nエネルギーよりも、余韻・知性・個性・空気感を重視する。\n\n\n#背景・装飾\n添付画像から読み取れるテーマに合わせて、紙片、メモ、抽象的な図形、手描きの線、ラフなパターン、象徴的な小物を背景に配置する。\n背景は描き込みすぎず、余白を活かす。\n画面全体に水彩紙のようなテクスチャ、わずかなインクのかすれ、手描きの温かみを入れる。\n\n\n【仕上がりイメージ】\nレトロでヨーロピアン、淡い水彩、ラフなペン画、クロスハッチング、白い余白が印象的な仕上がり。\n感情的すぎず、静かでおしゃれ。大人っぽく、知的で、少しアンニュイ。\nアスペクト比 9:16 HD。", "memo": "西洋風の骨格・アンニュイな表情"}, {"cat": "画風系", "name": "モノクロ萌え絵", "fav": "", "use": "水彩のちび萌え絵をモノクロで作りたい時", "ratio": "モノクロ", "img": "要（キャラ画像）", "body": "添付のキャラクターで萌え絵漫画風の作風・演出・表情表現を重視した漫画を生成してください。\n手描きの水彩マンガイラスト、柔らかいパステルカラー、優しい筆致、紙の質感、かわいいちびキャラ、風変わりで心温まる雰囲気。\n日本の漫画形式として、右から左・上から下へと自然に読めるコマ割りにしてください。\nコマの配置や形状は自由ですが、視線誘導だけは日本式の読み順に従わせてください。\n均一なレイアウトではなく、変則的または自由配置のコマ構成でお願いします。\n必ずモノクロの漫画として生成してください。\n【内容】\nあなたが止まっている理由は センスでも、理解力でも、やる気不足でもありません。 ただ一つ。\n“確実に成功できる道”が見えていないだけ\nそれだけです。\nまずはこちらのnote記事の無料部分だけでも、読んでください。\n【禁止事項】\n・左→右読み、下→上読みの構成。\n・別人に見えるアレンジ\n・参照キャラの特徴を他キャラに置き換える\n・英語にする。セリフの横書き。\n***************************************************************************************************", "memo": "左→右・下→上読み、横書きは禁止"}, {"cat": "画風系", "name": "2〜5コマ 不可思議ちゃん", "fav": "", "use": "モノクロのギャグ漫画（ちび）を手早く作る時", "ratio": "9:16／モノクロ", "img": "要（キャラ画像）", "body": "漫画のページを生成してください。\n#出力サイズ\n9:16\n#スタイル：モノクロ、日本の漫画、ギャグ漫画風。\nStyle prompt: Japanese manga, chibi style, thick outline lines, slice-of-life manga,\n日本語のセリフ、日本語のオノマトペを使用。\n出力前に日本語の文字化けや文字の崩れがないかチェック。\n重要：縦書き、コマの並び順は日本の漫画のコマ割りに合わせ、右上から左下に読む。\n特にシナリオでコマ指定されていない場合は、文章を要約して3～5コマで漫画を作る。\n## 2コマ漫画の場合、「上→下」の2コマ\n## 3コマ漫画の場合、「上→中→下」か「上→右下→左下」か「右上→左上→下」の3コマ\n## 4コマの場合、「右上→左上→右下→左下」か「上→右中→左中→下」の4コマ\n## 5コマの場合、日本の漫画形式として、右から左・上から下へと自然に読めるコマ割りにしてください。コマの配置や形状は自由ですが、視線誘導だけは日本式の読み順に従わせてください。\n均一なレイアウトではなく、変則的または自由配置のコマ構成でお願いします。\n#キャラクター：\n添付画像を#スタイルに従い再現\n#シナリオ：", "memo": "末尾の「#シナリオ」に内容を貼る"}, {"cat": "画風系", "name": "不可思議ちゃん NanobananaPro 安定", "fav": "", "use": "NanobananaProで安定して複数ページ出したい時", "ratio": "1:1.4／モノクロ", "img": "任意", "body": "---\n# 【設定エリア（YAML）】\n# ここでAIに「守るべきルール」を覚えさせます\nproject: Nanobanana_Manga_Gen\nlanguage: Japanese\nstyle: 日本の少年漫画風\nwriting-mode: vertical-rl\ncolor_mode: モノクロ\n\n\n# プロンプト設定\nstyle_prompt: japanese manga, shonen manga style, monochrome, greyscale, dynamic action, bold lines, heavy screentones, ink lines, high contrast\nnegative_prompt: color, chromatic, 3d render, photorealistic, painting, watercolor\n\n\n# ページ設定\naspect_ratio: '1:1.4'\ngrid_rows: 3\ngrid_cols: 2\n\n\n# キャラクター設定\ncharacters:\n  - name: 不可思議ちゃん\n    description: white hair,long hair,asymmetrical bangs,hair over right eye,yellow eyes,tsurime, jitome,ahoge,black t-shirt,short sleeves, small breasts,black long skirt,black sandals,\n  - name: あべちゃん\n    description: orange hair,bobcut,air bangs, white frilled headband,lace maid headdress, green eyes, black blouse,white collar,long sleeves,white cufflinks, black bowtie, white apron,frilled apron, bib apron, dark gray classic maid, Knee-length skirt, black leather shoes\n\n\n# 生成指示（Instructions）\ninstructions: |-\n  【基本ルール】\n                    - これは日本の漫画です。セリフは必ず縦書き、右から左・上から下への\n       読み順に従ってください。\n                    - オノマトペは日本語のみ使用してください。\n                    - 添付画像がある場合は、テキスト描写よりも画像の視覚的特徴を\n       優先してください。\n\n\n                    【マンガ構成の絶対ルール（物理法則）】\n                    1. 時間とスピード（縦読み理論）:\n                    - 縦のコマ並びは「時間の経過を早く」表現し、テンポよく読ませてください。\n                    - 横のコマ並びは「時間をゆっくり」表現し、じっくり読ませる演出に\n       してください。\n                    2. 距離とサイズ:\n                    - 大ゴマ（大きなパネル）は必ず「寄り（Close-up）」で描写してください。\n                    - 重要な小物は必ず「アップ（Extreme Close-up）」で描き、視認性を\n       高めてください。\n                    3. 視線誘導（Z字と跳ね上げ）:\n                    - 視線は「右上→左下」のZ字で動きます。\n                    - 段の変わり目（左下から次の段の右上へ）の視線移動（跳ね上げ）が\n       断絶しないよう、フキダシ配置や構図で誘導してください。\n                    4. 構成（フリとウケ）:\n                    - ページ内で「フリ（興味）」と「ウケ（解決・リアクション）」のセットを\n       成立させてください。\n\n\nlayout_constraints: |-\n  指示:\n  - ページのアスペクト比 1:1.4 を厳守する。\n  - panel.number の順序は固定。---\n\n\n# 【脚本・構成エリア（Markdown）】\n# ここで「物語の流れ」を指示します\n\n\n## Page 1\n* **背景**: 神保町の街並み\n\n\n### Panel 1 (top-center)\n* **状況**: 神保町の雑然とした街並み。空には小さく「昼休み」という文字が浮かんでいる。（導入・フリ）\n* **構図**: Establishing shot（状況説明）\n* **演出意図**: 街の全景を見せることで場所を特定させる。\n\n\n### Panel 2 (bottom-full)\n* **状況**: 神保町の路地を並んで歩く二人。\n    * **不可思議ちゃん**: スマートフォンを見ている。 (位置: 右下 / 向き: 正面)\n    * **あべちゃん**: 不可思議ちゃんに話しかけている。 (位置: 左下 / 向き: 正面)\n* **構図**: Close up（クローズアップ）\n* **演出意図**: 二人の会話による展開（フリに対する進行）。\n\n\n* **セリフ**: 「このへんに新しいラーメン屋がオープンしたみたいね」 - 不可思議ちゃん (吹き出し: 丸 / 位置: 右上)\n* **セリフ**: 「ふかさん！そのお店、『人類みな麺類』の系列なんですよ！」 - あべちゃん (吹き出し: 丸 / 位置: 左下)\n\n\n### Panel 3 (bottom-left-floating)\n* **状況**: 会話の流れで食欲が湧いてきたあべちゃんの表情。（ウケ・リアクション）\n    * **あべちゃん**: 描写なし (位置: 自動 / 向き: 正面)\n* **構図**: Extreme Close up（顔のアップ）\n* **演出意図**: オチ（ウケ）としてあべちゃんの感情を強調し、次のページへの「引き」を作る。\n\n\n* **セリフ**: 「話してたら食べたくなってきました！」 - あべちゃん (吹き出し: 丸 / 位置: 右上)\n\n\n【kinoさん作 “マンガの原理”を基に構築したプロンプト】\n* https://note.com/kino_11/n/n4e3bdd5079fd", "memo": "YAML設定＋Markdown脚本。キャラ定義入り"}, {"cat": "作業系", "name": "超一流の漫画編集者ロール", "fav": "", "use": "あらすじからYAMLプロンプトを作ってもらう時（編集者AI）", "ratio": "モノクロ少年漫画／縦書き", "img": "要（キャラ画像か特徴）", "body": "あなたは「超一流の漫画編集者」かつ「Nano Banana Proのエキスパート」です。\nこれから私の漫画制作をサポートしてください。\n\n\n## あなたの役割\n私が提供する「キャラクター画像（または特徴）」と「あらすじ」をもとに、漫画生成AI（Nano Banana Pro）で出力可能なYAML形式のプロンプトを作成することです。\n\n\n## 制作における絶対ルール（マンガの原理・改）\nYAMLを作成する際は、以下の物理法則を `instructions` や `description` に反映させてください。\n\n\n1.  **時間とスピードのコントロール（縦読み理論）**:\n    * **縦の流れ**（コマが縦に並ぶ）：**時間が早く進む**。テンポよく読ませたいシーンで使用。\n    * **横の流れ**（コマが横に並ぶ）：**時間をゆっくり見せる**。じっくり読ませたいシーンで使用。\n\n\n2.  **距離とサイズの鉄則**:\n    * **大コマ**：必ず**「寄り（クローズアップ）」**にする。\n    * **重要な小物**：必ず**「アップ」**で描写し、読者に認識させる。\n\n\n3.  **視線誘導の「跳ね上げ」**:\n    * 日本の漫画はZ字（右→左、下へ、右→左）に読む。\n    * **「跳ね上げ」を意識せよ**：ある段の「左下（読み終わり）」から、次の段の「右上（読み始め）」へ視線が移動する際、断絶しないようにつなげる意識を持つこと。（例：フキダシの位置やキャラの視線、効果線で右上へ誘導する）。\n\n\n4.  **フリとウケ**:\n    * 各ページ内で必ず「フリ（興味）」と「ウケ（解決・リアクション）」のセットを作る。\n\n\n## 出力フォーマット（厳守）\nNano Banana Pro形式のYAMLで出力してください。\n各ページ共通で以下の設定を強制してください。\n- `writing-mode : \"vertical-rl\"`\n- `color_mode : \"白黒\"`\n- `style : \"japanese syonen manga, monochrome, greyscale, screentones, high quality\"`\n\n\n---\n**【重要】まだ生成を開始しないでください**\n\n\nまずは、あなたがこの「編集者」としての役割とルールを理解したことを簡潔に返答し、私に以下の情報の提供を求めてください。\n\n\n1. **キャラクターの画像**（または詳細な外見の特徴）\n2. **漫画にしたいエピソードやあらすじ**\n\n\n私がそれらを入力したら、全4ページの構成案（YAML）の作成を開始してください。", "memo": "最初は生成せず、必要情報を聞いてくる"}, {"cat": "作業系", "name": "みどりさん親レシピ（キャラシート）", "fav": "", "use": "キャラ設定資料（キャラクターシート）を作る時", "ratio": "1枚絵／白背景", "img": "要（キャラ画像）", "body": "添付画像を参考にして、キャラクターシートを作成してください。\n\n\n目的：\n添付画像のキャラクター性・雰囲気・配色・顔立ち・髪型・服装・小物・世界観を整理し、今後のイラスト制作やLINEスタンプ、SNSアイコン、グッズ制作に使いやすいキャラクター設定資料にする。\n\n\n最重要ルール：\n・添付画像のキャラクターの特徴を忠実に読み取る\n・別キャラクターにしない\n・顔、髪型、服装、配色、印象を大きく変えない\n・ただし、破綻している部分や曖昧な部分は自然に補完する\n・実在キャラクターや既存IPに似せない\n・オリジナルキャラクターとして使えるデザインに整える\n\n\n画像形式：\n・1枚のキャラクターシート\n・背景は白または淡い無地\n・見やすく整理されたデザイン\n・キャラクター設定資料として使いやすいレイアウト\n\n\n入れてほしい内容：\n1. メインキャラクター立ち絵  \n 正面向き、全身または上半身で大きく配置\n\n\n2. 表情差分  \n 笑顔、困り顔、驚き顔、照れ顔、通常顔などを4〜6種類\n\n\n3. ポーズ差分  \n 手を振る、指差し、考える、喜ぶ、落ち込むなどを3〜5種類\n\n\n4. カラーパレット  \n 髪、目、服、アクセントカラーなどを小さな色チップで表示\n\n\n5. デザインメモ  \n キャラクターの特徴がわかるように、短い注釈を入れる  \n 例：丸いシルエット、太めのアウトライン、やさしい表情、ゆるい雰囲気、Z世代向け、など\n\n\n6. 小物・装飾  \n 添付画像にある特徴的な小物、アクセサリー、モチーフがあれば右側に整理して配置\n\n\n作風：\n・クリーンで見やすいキャラクターデザイン資料\n・フラットで可愛いイラスト調\n・太めのアウトライン\n・親しみやすく、SNSやLINEスタンプに展開しやすい\n・情報量は多めだが、ゴチャゴチャさせない\n・余白をしっかり取り、プロの設定資料のように整える\n\n\n文字：\n・日本語で短く読みやすく\n・小さすぎる文字は禁止\n・文字が破綻しないように、必要最低限の短いラベルだけにする\n・見出しは「Character Sheet」「表情」「ポーズ」「カラーパレット」「デザインメモ」など\n\n\nNG：\n・添付画像と違うキャラクターにする\n・顔や髪型を大きく変える\n・服装を勝手に別物にする\n・実在キャラクター風にする\n・文字を大量に入れる\n・背景を派手にする\n・細かすぎる装飾を入れる\n・複数キャラに見えるほどバラバラなデザインにする\n・リアル寄りにしすぎる\n・低解像度、ぼやけ、歪み、手足の破綻\n\n\n仕上げ：\n添付画像の魅力を保ったまま、今後いろいろな用途に展開できる「公式キャラクター設定資料」のような完成度にしてください。", "memo": "別キャラにしない・実在IPに似せない"}, {"cat": "作業系", "name": "X記事用バナー生成", "fav": "", "use": "note記事用の16:9バナーを作る時", "ratio": "16:9 ヨコ／カラー", "img": "要（プロフィール画像）", "body": "note記事の文章から、このnote記事用に世界観のあるバナーを作成して。アスペクト比16:9ヨコ。広告風のタイポグラフィデザインで、カラーやトーンはプロフィールに合わせる。プロフィール上のキャラクター・人物のみを使用し、新たに人物や動物などは生成しない。 バナーの中で、記事の内容の全てを公開するのではなく、バナーを見て記事の内容に期待する構成にして。", "memo": "人物はプロフィール上のもののみ使用"}, {"cat": "作業系", "name": "X記事用バナー生成（追記版）", "fav": "", "use": "X記事＋プロフィール画像から16:9バナーを作る時", "ratio": "16:9 ヨコ／カラー", "img": "要（X記事＋プロフィールSS）", "body": "次のX記事の文章とプロフィール画像から、このX記事用に世界観のあるバナーを作成して。アスペクト比16:9ヨコ。広告風のタイポグラフィデザインで、カラーやトーンはプロフィールに合わせる。プロフィール上のキャラクター・人物のみを使用し、新たに人物や動物などは生成しない。\n\n\n[ ここからX記事を添付＆Xプロフィールスクショ添付する ]", "memo": "新たな人物・動物は生成しない"}, {"cat": "作業系", "name": "レイアウト調整", "fav": "", "use": "5:2でトリミングする前提で中央に収めたい時", "ratio": "5:2前提", "img": "不要", "body": "レイアウト指示（5:2トリミング前提）: - 全ての要素を「画面中央の高さ70%のエリア」に収めてください。", "memo": "全要素を画面中央の高さ70%に収める"}];
+const ONE_SHOT_COMMON = `自作キャラクターを主役にした、日本マンガ風の強い1枚絵。
+正方形構図。SNSで一瞬見ただけで印象に残る、マンガ表紙のような完成度。
+添付した自作キャラクター画像を最優先の参照元にする。
+キャラクターの容姿、髪型、服装、配色、表情の傾向、年齢感、体型、特徴的な小物を忠実に再現する。
+別人化、髪型変更、服装変更、配色変更、年齢感の変更は禁止。
+構図参考画像が別にある場合でも、参考にするのは構図・演出・密度・余白の使い方だけ。構図参考画像内のキャラクターの容姿や衣装は再現しない。
+主役のシルエット、顔、視線、手、ポーズのどれかを強い第一印象として見せる。
+画面内に大きな白い吹き出し、または日本語コピーを後から入れられる余白を作る。
+吹き出しは太い黒線、少し歪んだ手描き感。
+太い黒線、強い白黒コントラスト、黒ベタ、ハーフトーン、筆のかすれ、墨の飛沫。
+色数は絞る。黒・白を中心に、メインカラー1色、アクセントカラー1色だけを強く使う。
+背景にはテーマを象徴する小物や場所を入れる。ただし、主役の顔とシルエットが埋もれないように整理する。
+情報量は多くても、ひと目で「主役」「一言」「テーマ」が読める構図にする。
+high impact manga poster, bold composition, thick ink outlines, expressive speech bubble, brush lettering, high contrast, readable silhouette, dramatic cropping, square illustration`;
+
+const ONE_SHOT_MODES = {
+  still: {
+    label: '静の圧',
+    body: `今回は必ず「静の圧」として描く。
+キャラクターは大きく動かない。視線、表情、沈黙、余白、象徴的な小物で強い印象を作る。
+顔の超アップ、画面端での大胆なトリミング、静かな指差し、机上の証拠品、波紋、暗い部屋、白い余白、大きな吹き出しを使う。
+画面全体は落ち着いているが、意味深で緊張感がある。
+構図はシンプル。キャラクター、吹き出し、小物の3要素がはっきり読める。
+スピード線、爆発、派手な戦闘表現、過剰なエフェクトは控える。
+静かだが忘れられない、ポスターのような1枚絵にする。`
+  },
+  dynamic: {
+    label: '動の圧',
+    body: `今回は必ず「動の圧」として描く。
+キャラクターが画面の手前に飛び出してくる迫力構図。
+指差し、拳、武器、走るポーズ、分身、群衆、集中線、スピード線、斜め構図を使う。
+手や顔を大きく前景に出し、奥に小さな分身、敵、背景要素を配置して奥行きを作る。
+今まさに行動が始まる瞬間に見せる。
+余白よりも勢い、前後差、視線誘導を優先する。
+ただし画面を散らかしすぎず、主役の表情と一言が最初に目に入るようにする。
+一瞬で目を奪う、熱量の高いマンガ表紙風イラストにする。`
+  }
+};
+
+function buildImagePromptFromParts(modeKey, message, theme, inspiration, letteringMode){
+  const mode = ONE_SHOT_MODES[modeKey] || ONE_SHOT_MODES.still;
+  const line = String(message||'').trim() || 'ここに大きく見せるメッセージ';
+  const motif = String(theme||'').trim() || '大きく見せるメッセージの意味から連想できる象徴的な小物、場所、記号';
+  const sourceText = String(inspiration||'').trim();
+  const inspirationBlock = sourceText
+    ? `以下の文章は、画像内にそのまま文字として描かない。\n内容から感情の流れ、対立構造、象徴的なキーワード、温度差、時間変化を読み取り、背景・配色・光・影・小物・構図・視線誘導に変換する。\n\n【変換元の文章】\n${sourceText}\n\n【変換方針】\n・文章を説明ラベル化しない\n・抽象語は視覚モチーフに置き換える\n・対比や落差は、明暗、上下、遠近、左右、色温度、破線と光などで表現する\n・重要な概念は背景の形、影、道、階段、波紋、割れ目、光の筋、紙片、記号として散らす\n・「V字回復」「落差」は、底から上昇するV字の光、下降から反転する道、暗い左下から明るい右上への流れで表現する\n・「冷徹・無関心」は、青灰色、無機質な影、距離のある視線、硬い直線で表現する\n・「カタルシス」「感情の発生」は、割れる影、広がる光、波紋、暖色の反射で表現する\n・大きく読ませる文字は「大きく見せるメッセージ」だけに絞る`
+    : `補足文章がないため、「大きく見せるメッセージ」とテーマ・小物から背景や雰囲気を連想して作る。説明文字を増やさず、視覚的な比喩で表現する。`;
+  const lettering = letteringMode === 'blank'
+    ? `大きな白い吹き出し、または筆文字を入れられる余白を作る。吹き出しの中は空白にする。日本語コピーは画像に直接描かず、後から入れられる状態にする。`
+    : `大きな白い吹き出し、または筆文字で次の日本語コピーを入れる：\n「${line}」\n文字は太い筆文字。黒を基本に、重要語だけ赤または青で強調する。文字化けしないように短く、読みやすく配置する。`;
+
+  return `# 画像生成プロンプト
+
+## 目的
+自作キャラクターを使って、見た人の印象に強く残る1枚絵を生成する。
+今回は「${mode.label}」の構図だけを強く反映し、「静」と「動」を混ぜない。
+
+## キャラクター画像
+画像生成時に添付する自作キャラクター画像を使う。
+その画像の容姿、髪型、服装、配色、顔立ち、表情の傾向、特徴的な小物を忠実に再現する。
+キャラクター画像が複数ある場合は、同一キャラクターとして自然に統合し、別キャラにしない。
+
+## 大きく見せるメッセージ
+「${line}」
+
+## テーマ・小物・場所
+${motif}
+
+## 背景・雰囲気への変換材料
+${inspirationBlock}
+
+## 共通ルール
+${ONE_SHOT_COMMON}
+
+## 今回の構図ルール
+${mode.body}
+
+## 文字・吹き出し
+${lettering}
+
+## 最終チェック
+キャラクターの容姿は、添付した自作キャラクター画像を最優先で維持する。
+構図参考画像がある場合、その人物・衣装・髪型・配色はそのまま再現しない。
+構図、余白、吹き出し、線の強さ、色の絞り方だけを参考にする。
+1枚絵として成立させ、複数コマ漫画にはしない。
+正方形、SNS投稿向け、読みやすい、主役が埋もれない、強い第一印象。`;
+}
+
+function oneShotCardBody(modeKey){
+  return buildImagePromptFromParts(
+    modeKey,
+    '{大きく見せるメッセージ}',
+    '{テーマに関係する小物・場所・記号}',
+    '{背景や雰囲気に反映したい文章}',
+    'draw'
+  );
+}
+
+const LOCAL_PROMPTS = [
+  {
+    cat: '一枚絵系',
+    name: '1枚絵 共通ルール（静／動）',
+    fav: '★★★',
+    use: '自作キャラで印象に残る1枚絵を作る時の共通ルール',
+    ratio: '1:1／カラー',
+    img: '要（自作キャラ画像）',
+    body: ONE_SHOT_COMMON,
+    memo: '静・動どちらにも必ず入れる土台',
+    type: 'imagePrompt'
+  },
+  {
+    cat: '一枚絵系',
+    name: '1枚絵 静の圧',
+    fav: '★★★',
+    use: '余白・視線・象徴で刺す1枚絵を作る時',
+    ratio: '1:1／カラー',
+    img: '要（自作キャラ画像）',
+    body: oneShotCardBody('still'),
+    memo: '静かなのに忘れられない構図',
+    type: 'imagePrompt'
+  },
+  {
+    cat: '一枚絵系',
+    name: '1枚絵 動の圧',
+    fav: '★★★',
+    use: '前後差・勢い・集中線で刺す1枚絵を作る時',
+    ratio: '1:1／カラー',
+    img: '要（自作キャラ画像）',
+    body: oneShotCardBody('dynamic'),
+    memo: '画面手前に飛び出す構図',
+    type: 'imagePrompt'
+  }
+];
+
+let DATA = withLocalPrompts(FALLBACK.slice());
+
+const grid=document.getElementById('grid'), q=document.getElementById('q'), countEl=document.getElementById('count');
+const dot=document.getElementById('dot'), statusText=document.getElementById('statusText');
+const tplSelect=document.getElementById('tplSelect'), nemeInput=document.getElementById('nemeInput');
+const comboOut=document.getElementById('comboOut'), comboCount=document.getElementById('comboCount'), selHint=document.getElementById('selHint');
+const impactSelect=document.getElementById('impactSelect'), messageInput=document.getElementById('messageInput');
+const themeInput=document.getElementById('themeInput'), inspirationInput=document.getElementById('inspirationInput');
+const letteringSelect=document.getElementById('letteringSelect'), imagePromptOut=document.getElementById('imagePromptOut');
+const imagePromptCount=document.getElementById('imagePromptCount');
+let cat='all', sort='orig';
+
+function favCount(s){ return (String(s||'').match(/★/g)||[]).length; }
+function esc(s){ return String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function withLocalPrompts(rows){
+  const localNames = new Set(LOCAL_PROMPTS.map(d=>d.name));
+  return (rows||[]).filter(d=>!localNames.has(d.name)).concat(LOCAL_PROMPTS);
+}
+
+const MARKERS = ['#ネーム','＃ネーム','# ネーム','#シナリオ','＃シナリオ','# シナリオ'];
+function findMarker(body){
+  let best=-1, mk='';
+  for(const m of MARKERS){ const i=body.lastIndexOf(m); if(i>best){best=i;mk=m;} }
+  return {idx:best, mk};
+}
+function merge(body, neme){
+  body = body||''; const n=(neme||'').trim();
+  if(!n) return body;
+  const {idx, mk} = findMarker(body);
+  if(idx>=0){
+    const after = idx+mk.length;
+    return body.slice(0,after).replace(/\s*$/,'') + "\n\n" + n + "\n" + body.slice(after).replace(/^\s*/,'');
+  }
+  return body.replace(/\s*$/,'') + "\n\n#ネーム\n" + n;
+}
+
+// ---- 合体メーカー ----
+function comboPrompts(){ return DATA.filter(d=>d.type!=='imagePrompt'); }
+function currentPrompt(){ return comboPrompts().find(d=>d.name===tplSelect.value); }
+function populateSelect(){
+  const prev = tplSelect.value;
+  const groups = {};
+  const rows = comboPrompts();
+  rows.forEach(d=>{ (groups[d.cat||'その他'] ||= []).push(d); });
+  let h='';
+  for(const g of Object.keys(groups)){
+    h += `<optgroup label="${esc(g)}">`;
+    groups[g].forEach(d=>{ h += `<option value="${esc(d.name)}">${esc(d.name)}</option>`; });
+    h += `</optgroup>`;
+  }
+  tplSelect.innerHTML = h;
+  if(prev && rows.some(d=>d.name===prev)) tplSelect.value = prev;
+  else { const f = rows.find(d=>d.cat==='画風系') || rows[0]; if(f) tplSelect.value=f.name; }
+}
+function updateHint(){
+  const p=currentPrompt(); if(!p){selHint.textContent='';return;}
+  const {idx}=findMarker(p.body||'');
+  selHint.textContent = (idx>=0)
+    ? '※「'+(p.body.match(/#\s?(ネーム|シナリオ)|＃\s?(ネーム|シナリオ)/)||['#ネーム'])[0]+'」の位置にネームが入ります。'+(p.use?'（'+p.use+'）':'')
+    : '※このプロンプトには差し込み位置が無いので、末尾にネームを追加します。'+(p.use?'（'+p.use+'）':'');
+}
+function updateCombo(){
+  const p=currentPrompt();
+  comboOut.value = p ? merge(p.body, nemeInput.value) : '';
+  comboCount.textContent = comboOut.value.length + ' 文字';
+}
+tplSelect.addEventListener('change', ()=>{ updateHint(); updateCombo(); });
+nemeInput.addEventListener('input', updateCombo);
+document.getElementById('nemeClear').addEventListener('click', ()=>{ nemeInput.value=''; updateCombo(); nemeInput.focus(); });
+document.getElementById('comboCopy').addEventListener('click', async e=>{
+  const text=comboOut.value;
+  if(!text){ return; }
+  try{ await navigator.clipboard.writeText(text); }
+  catch(_){ comboOut.removeAttribute('readonly'); comboOut.select(); document.execCommand('copy'); comboOut.setAttribute('readonly','');}
+  const b=e.currentTarget, old=b.textContent; b.textContent='✓ コピーしました'; b.classList.add('done');
+  setTimeout(()=>{b.textContent=old;b.classList.remove('done');},1500);
+});
+
+// ---- 1枚絵プロンプトメーカー ----
+function updateImagePrompt(){
+  imagePromptOut.value = buildImagePromptFromParts(
+    impactSelect.value,
+    messageInput.value,
+    themeInput.value,
+    inspirationInput.value,
+    letteringSelect.value
+  );
+  imagePromptCount.textContent = imagePromptOut.value.length + ' 文字';
+}
+[impactSelect,messageInput,themeInput,inspirationInput,letteringSelect].forEach(el=>{
+  el.addEventListener('input', updateImagePrompt);
+  el.addEventListener('change', updateImagePrompt);
+});
+document.getElementById('imagePromptClear').addEventListener('click', ()=>{
+  messageInput.value='';
+  themeInput.value='';
+  inspirationInput.value='';
+  letteringSelect.value='draw';
+  updateImagePrompt();
+  messageInput.focus();
+});
+document.getElementById('imagePromptCopy').addEventListener('click', async e=>{
+  const text=imagePromptOut.value;
+  if(!text){ return; }
+  try{ await navigator.clipboard.writeText(text); }
+  catch(_){ imagePromptOut.removeAttribute('readonly'); imagePromptOut.select(); document.execCommand('copy'); imagePromptOut.setAttribute('readonly','');}
+  const b=e.currentTarget, old=b.textContent; b.textContent='✓ コピーしました'; b.classList.add('done');
+  setTimeout(()=>{b.textContent=old;b.classList.remove('done');},1500);
+});
+
+// ---- カード一覧 ----
+function render(){
+  const kw=q.value.trim().toLowerCase();
+  let rows=DATA.map((d,i)=>({...d,_i:i}));
+  if(cat!=='all') rows=rows.filter(d=>d.cat===cat);
+  if(kw) rows=rows.filter(d=>((d.name||'')+(d.use||'')+(d.body||'')+(d.memo||'')).toLowerCase().includes(kw));
+  if(sort==='fav') rows.sort((a,b)=>favCount(b.fav)-favCount(a.fav)||a._i-b._i);
+  countEl.textContent=rows.length+' 件';
+  grid.innerHTML=rows.map(d=>{
+    const cls=d.cat==='画風系'?'gafu':(d.cat==='作業系'?'sagyo':(d.cat==='一枚絵系'?'oneshot':'other'));
+    const stars=favCount(d.fav)?'★'.repeat(favCount(d.fav)):'';
+    return `<div class="card">
+      <div class="toprow"><span class="badge ${cls}">${esc(d.cat)}</span>
+        <span class="name">${esc(d.name)}</span><span class="fav">${stars}</span></div>
+      <div class="use">${esc(d.use)}</div>
+      <div class="meta">${d.ratio?`<span class="chip">📐 ${esc(d.ratio)}</span>`:''}${d.img?`<span class="chip">🖼 ${esc(d.img)}</span>`:''}</div>
+      ${d.memo?`<div class="memo">※ ${esc(d.memo)}</div>`:''}
+      <div class="actions"><button class="copy" data-i="${d._i}">📋 コピー</button><button class="peek">本文</button></div>
+      <div class="body">${esc(d.body)}</div></div>`;
+  }).join('');
+}
+grid.addEventListener('click', async e=>{
+  const cp=e.target.closest('.copy');
+  if(cp){ const t=DATA[+cp.dataset.i].body||'';
+    try{await navigator.clipboard.writeText(t);}catch(_){const x=document.createElement('textarea');x.value=t;document.body.appendChild(x);x.select();document.execCommand('copy');x.remove();}
+    const o=cp.textContent;cp.textContent='✓ コピーしました';cp.classList.add('done');setTimeout(()=>{cp.textContent=o;cp.classList.remove('done');},1400);return;}
+  const pk=e.target.closest('.peek'); if(pk){pk.closest('.card').querySelector('.body').classList.toggle('open');}
+});
+document.getElementById('catSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;cat=b.dataset.cat;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));render();});
+document.getElementById('sortSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;sort=b.dataset.sort;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));render();});
+q.addEventListener('input',render);
+
+function refreshUI(){ populateSelect(); updateHint(); updateCombo(); updateImagePrompt(); render(); }
+
+// ---- スプシ最新をJSONPで ----
+function setStatus(k,t){ dot.className='dot '+k; statusText.textContent=t; }
+window.gvizCb=function(resp){
+  try{
+    const cols=resp.table.cols.map(c=>c.label||''); const idx={}; cols.forEach((l,i)=>idx[l]=i);
+    const get=(row,label)=>{const i=idx[label];if(i==null)return '';const c=row.c[i];return c&&c.v!=null?String(c.v):'';};
+    const out=resp.table.rows.map(r=>({cat:get(r,'カテゴリ'),name:get(r,'プロンプト名'),fav:get(r,'お気に入り度'),
+      use:get(r,'どんな時に使う'),ratio:get(r,'比率・色'),img:get(r,'画像添付'),body:get(r,'プロンプト本文'),memo:get(r,'備考')})).filter(d=>d.name);
+    if(out.length){ DATA=withLocalPrompts(out); refreshUI();
+      const now=new Date(); setStatus('live','スプシ最新を表示中（'+now.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})+' 取得）');
+    } else setStatus('off','保存版を表示中（スプシが空でした）');
+  }catch(err){ setStatus('off','保存版を表示中（読み込みエラー）'); }
+};
+function loadLive(){
+  setStatus('load','スプレッドシートを読み込み中…');
+  const old=document.getElementById('gvizScript'); if(old) old.remove();
+  const s=document.createElement('script'); s.id='gvizScript';
+  s.src='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?sheet='+encodeURIComponent(SHEET_NAME)+'&headers=1&tqx=responseHandler:gvizCb&_='+Date.now();
+  s.onerror=()=>setStatus('off','保存版を表示中（オフライン）');
+  document.body.appendChild(s);
+  setTimeout(()=>{ if(dot.className.indexOf('load')>=0) setStatus('off','保存版を表示中（応答なし）'); },8000);
+}
+document.getElementById('reload').addEventListener('click', loadLive);
+
+refreshUI();   // まず保存版
+loadLive();    // 裏で最新
+</script>
+</body>
+</html>

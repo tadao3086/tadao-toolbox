@@ -472,9 +472,10 @@
 
 <div class="toast" id="toast">コピーしました</div>
 
+<script src="collection.js"></script>
 <script>
 // ================= 設定 =================
-const API_URL = 'https://script.google.com/macros/s/AKfycbzcPEbKXk8jthyQkEogZlgRV19X2yg77km7zlsBqoljkPiv_EYFDDcRbagaxayWwETs5Q/exec';
+// 収蔵品データは collection.js（このリポジトリ内）で管理する
 
 const TYPES = {
   all:    { label: 'すべて' },
@@ -531,21 +532,18 @@ function itemNo(item) {
 }
 
 // ================= データ取得 =================
-async function load() {
+function load() {
   const status = document.getElementById('status');
-  try {
-    const res = await fetch(API_URL);
-    const data = await res.json();
-    if (!data.ok) throw new Error(data.error || 'unknown');
-    items = data.items.filter(it => it.title);
-    status.style.display = 'none';
-    renderTabs();
-    renderTags();
-    renderGrid();
-  } catch (e) {
+  if (!Array.isArray(window.COLLECTION) || !window.COLLECTION.length) {
     status.innerHTML = '収蔵品を読み込めませんでした。' +
-      '<span class="err-hint">GASのデプロイ設定（アクセスできるユーザー：全員）と、通信環境をご確認ください。</span>';
+      '<span class="err-hint">collection.js が正しく読み込めているかご確認ください。</span>';
+    return;
   }
+  items = window.COLLECTION.filter(it => it.title);
+  status.style.display = 'none';
+  renderTabs();
+  renderTags();
+  renderGrid();
 }
 
 // ================= 描画 =================

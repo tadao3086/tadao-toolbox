@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>モンスター纏いスタジオ</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0b0f1a;
+  --surface:   #111827;
+  --surface2:  #1a2236;
+  --surface3:  #243049;
+  --border:    #2a3a56;
+  --accent:    #38bdf8;
+  --accent2:   #f6c90e;
+  --text:      #e2e8f0;
+  --text-muted:#8496b0;
+  --danger:    #f87171;
+  --radius:    12px;
+  --radius-sm: 8px;
+  --font: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 20px 80px;
+}
+
+/* ===== HEADER ===== */
+header {
+  background: linear-gradient(135deg, #0d1b3e 0%, #0b2240 50%, #091a2e 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 36px 20px 32px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(56,189,248,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.header-inner { max-width: 960px; margin: 0 auto; position: relative; }
+.header-title {
+  font-size: clamp(24px, 5vw, 36px);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  background: linear-gradient(90deg, #38bdf8, #a78bfa, #f6c90e);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 6px;
+}
+.header-sub {
+  color: var(--text-muted);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+}
+
+/* ===== SECTIONS ===== */
+.section {
+  margin-top: 32px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+}
+.section-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-title::before {
+  content: "";
+  display: inline-block;
+  width: 3px;
+  height: 16px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+/* ===== STEP 1: IMAGE UPLOAD ===== */
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  position: relative;
+}
+.upload-zone:hover, .upload-zone.drag-over {
+  border-color: var(--accent);
+  background: rgba(56,189,248,0.04);
+}
+.upload-zone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+.upload-icon { font-size: 40px; margin-bottom: 10px; }
+.upload-label { color: var(--text-muted); font-size: 14px; }
+.upload-label strong { color: var(--accent); }
+
+.preview-wrap {
+  display: none;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.preview-wrap.visible { display: flex; }
+.preview-img {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+.preview-actions { display: flex; flex-direction: column; gap: 8px; }
+.btn-sm {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: var(--font);
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn-sm:hover { background: var(--surface3); border-color: var(--accent); }
+.btn-sm.danger { border-color: var(--danger); color: var(--danger); }
+.btn-sm.danger:hover { background: rgba(248,113,113,0.1); }
+
+.privacy-note {
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--text-muted);
+  background: rgba(56,189,248,0.05);
+  border: 1px solid rgba(56,189,248,0.15);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+}
+
+.char-memo-wrap { margin-top: 16px; }
+.char-memo-wrap label {
+  display: block;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.char-memo-wrap input {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  transition: border-color 0.15s;
+}
+.char-memo-wrap input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.char-memo-wrap input::placeholder { color: var(--text-muted); }
+
+/* ===== STEP 2: MONSTER GRID ===== */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.tab-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-family: var(--font);
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  transition: all 0.15s;
+}
+.tab-btn:hover { border-color: var(--accent); color: var(--accent); }
+.tab-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #0b0f1a;
+  font-weight: 700;
+}
+
+.search-box {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  margin-bottom: 16px;
+  transition: border-color 0.15s;
+}
+.search-box:focus { outline: none; border-color: var(--accent); }
+.search-box::placeholder { color: var(--text-muted); }
+
+.monster-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+}
+.monster-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 10px;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
+  user-select: none;
+}
+.monster-card:hover {
+  border-color: var(--accent);
+  background: var(--surface3);
+  transform: translateY(-2px);
+}
+.monster-card.selected {
+  border-color: var(--accent);
+  background: rgba(56,189,248,0.1);
+  box-shadow: 0 0 0 2px rgba(56,189,248,0.3);
+}
+.monster-emoji { font-size: 32px; display: block; margin-bottom: 6px; }
+.monster-name-ja { font-size: 12px; font-weight: 700; color: var(--text); }
+.monster-name-en { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+.no-results { color: var(--text-muted); font-size: 14px; padding: 20px 0; text-align: center; }
+
+/* ===== DETAIL PANEL ===== */
+.detail-panel {
+  display: none;
+  margin-top: 20px;
+  background: var(--surface2);
+  border: 1px solid rgba(56,189,248,0.3);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.detail-panel.visible { display: block; }
+.detail-panel h3 { font-size: 16px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.detail-lore { font-size: 13px; color: var(--text-muted); line-height: 1.75; margin-bottom: 14px; }
+.detail-row { margin-bottom: 12px; }
+.detail-row-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.chip-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  background: rgba(56,189,248,0.1);
+  border: 1px solid rgba(56,189,248,0.25);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 11px;
+  color: var(--accent);
+}
+.detail-text { font-size: 13px; color: var(--text); }
+
+/* ===== STEP 3: STYLE ===== */
+.style-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+@media (max-width: 540px) {
+  .style-grid { grid-template-columns: 1fr; }
+}
+.style-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 16px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
+  user-select: none;
+}
+.style-card:hover {
+  border-color: var(--accent2);
+  background: var(--surface3);
+  transform: translateY(-2px);
+}
+.style-card.selected {
+  border-color: var(--accent2);
+  background: rgba(246,201,14,0.08);
+  box-shadow: 0 0 0 2px rgba(246,201,14,0.25);
+}
+.style-name { font-size: 14px; font-weight: 700; margin-bottom: 6px; color: var(--accent2); }
+.style-desc { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+.style-ar {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--surface3);
+  border-radius: 4px;
+  display: inline-block;
+  padding: 2px 8px;
+}
+
+/* ===== STEP 4: OPTIONS ===== */
+.radio-group { display: flex; flex-wrap: wrap; gap: 10px; }
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 10px 16px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  transition: border-color 0.15s, background 0.15s;
+  user-select: none;
+}
+.radio-label:hover { border-color: var(--accent); background: var(--surface3); }
+.radio-label input[type="radio"] { accent-color: var(--accent); width: 16px; height: 16px; }
+.radio-label.checked { border-color: var(--accent); background: rgba(56,189,248,0.08); }
+
+.mj-check {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text);
+  user-select: none;
+}
+.mj-check input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer; }
+
+/* ===== STEP 5: GENERATE ===== */
+.generate-wrap { text-align: center; padding-top: 8px; }
+.btn-generate {
+  padding: 16px 48px;
+  background: linear-gradient(135deg, #0ea5e9, #6366f1);
+  border: none;
+  border-radius: 40px;
+  color: #fff;
+  font-family: var(--font);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 4px 20px rgba(14,165,233,0.3);
+}
+.btn-generate:hover:not(:disabled) {
+  opacity: 0.92;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 28px rgba(14,165,233,0.45);
+}
+.btn-generate:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.generate-hint {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--danger);
+  min-height: 20px;
+}
+
+.output-area { display: none; margin-top: 32px; }
+.output-area.visible { display: block; }
+.output-note {
+  font-size: 12px;
+  color: var(--text-muted);
+  background: rgba(246,201,14,0.06);
+  border: 1px solid rgba(246,201,14,0.2);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin-bottom: 20px;
+}
+
+.prompt-block {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.prompt-block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.prompt-block-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent2);
+}
+.btn-copy {
+  padding: 7px 18px;
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.btn-copy:hover { border-color: var(--accent); color: var(--accent); }
+.btn-copy.copied {
+  border-color: #4ade80;
+  color: #4ade80;
+}
+.prompt-text {
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 600px) {
+  .section { padding: 20px 16px; }
+  .monster-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+  .radio-group { flex-direction: column; }
+}
+@media (max-width: 380px) {
+  .section { padding: 16px 12px; }
+  .monster-grid { grid-template-columns: repeat(3, 1fr); }
+  .monster-emoji { font-size: 24px; }
+  .monster-name-ja { font-size: 10px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="header-title">🐉 モンスター纏いスタジオ</div>
+    <div class="header-sub">モンスターを身に纏うキャラクターのプロンプトを作る</div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- STEP 1 -->
+  <div class="section">
+    <div class="section-title">STEP 1 ベースキャラ画像</div>
+
+    <div class="upload-zone" id="uploadZone">
+      <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp">
+      <div class="upload-icon">🖼️</div>
+      <div class="upload-label">クリックまたはドラッグ&ドロップで画像を選択<br><strong>JPEG / PNG / WebP</strong>（10MB以内）</div>
+    </div>
+
+    <div class="preview-wrap" id="previewWrap">
+      <img id="previewImg" class="preview-img" src="" alt="プレビュー">
+      <div class="preview-actions">
+        <label for="fileInput" class="btn-sm" style="cursor:pointer;">差し替え</label>
+        <button class="btn-sm danger" id="removeImg">削除</button>
+      </div>
+    </div>
+
+    <div class="privacy-note">
+      🔒 画像はこのページ内でプレビューされるだけで、どこにも送信されません。<br>
+      生成AIに渡すときは、この画像を参照画像として添付 ＋ 下のプロンプトをコピーして使ってください。
+    </div>
+
+    <div class="char-memo-wrap">
+      <label for="charMemo">キャラの特徴メモ（任意）</label>
+      <input type="text" id="charMemo" placeholder="例: 銀髪ツインテール、赤い瞳">
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="section">
+    <div class="section-title">STEP 2 モンスターを選ぶ</div>
+
+    <div class="tabs" id="categoryTabs"></div>
+    <input type="text" class="search-box" id="searchBox" placeholder="検索（日本語名・英語名）">
+    <div class="monster-grid" id="monsterGrid"></div>
+
+    <div class="detail-panel" id="detailPanel"></div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="section">
+    <div class="section-title">STEP 3 画風を選ぶ</div>
+    <div class="style-grid" id="styleGrid"></div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="section">
+    <div class="section-title">STEP 4 オプション</div>
+
+    <div style="margin-bottom: 8px; font-size: 13px; color: var(--text-muted);">纏い度</div>
+    <div class="radio-group" id="blendGroup">
+      <label class="radio-label" id="lbl-subtle">
+        <input type="radio" name="blend" value="subtle"> ワンポイント
+      </label>
+      <label class="radio-label checked" id="lbl-partial">
+        <input type="radio" name="blend" value="partial" checked> しっかり纏う（デフォルト）
+      </label>
+      <label class="radio-label" id="lbl-full">
+        <input type="radio" name="blend" value="full"> 完全融合
+      </label>
+    </div>
+
+    <label class="mj-check">
+      <input type="checkbox" id="mjCheck"> Midjourneyパラメータを付ける（<code>--niji 6 --ar ...</code>）
+    </label>
+  </div>
+
+  <!-- STEP 5 -->
+  <div class="section">
+    <div class="section-title">STEP 5 プロンプト生成</div>
+    <div class="generate-wrap">
+      <button class="btn-generate" id="generateBtn" disabled>✨ プロンプトを生成</button>
+      <div class="generate-hint" id="generateHint">モンスターと画風を選んでください</div>
+    </div>
+
+    <div class="output-area" id="outputArea">
+      <div class="output-note">
+        📎 ベースキャラ画像を参照画像として添付し、このプロンプトを貼り付けてください
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-block-header">
+          <span class="prompt-block-label">🇺🇸 英語プロンプト（画像生成AI用）</span>
+          <button class="btn-copy" id="copyEn">コピー</button>
+        </div>
+        <div class="prompt-text" id="promptEn"></div>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-block-header">
+          <span class="prompt-block-label">🇯🇵 日本語版（内容確認用）</span>
+          <button class="btn-copy" id="copyJa">コピー</button>
+        </div>
+        <div class="prompt-text" id="promptJa"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+// ==================== MONSTER DATA ====================
+const MONSTERS = [
+  {
+    "id": "slime",
+    "nameJa": "スライム",
+    "nameEn": "Slime",
+    "category": "定番",
+    "emoji": "💧",
+    "loreJa": "ダンジョンズ＆ドラゴンズに端を発するアメーバ状の不定形生物。ドラゴンクエストでは涙型の愛嬌あるキャラとして世界的に有名になった。",
+    "motifsEn": ["translucent gel body with no fixed shape","dripping viscous blobs of liquid","glossy wet surface with internal light refraction","jiggling wobbling mass","bubble-like spherical droplets floating off body","stretching pseudopod tendrils reaching outward","teardrop silhouette with rippling edges"],
+    "motifsJa": ["固定した形を持たない半透明のゲル状の体","粘性の高い液体が垂れ落ちる様子","内部で光が屈折するツヤツヤした濡れた表面","プルプルと揺れる塊","体から浮かぶ泡のような球形の液滴","外に伸びる偽足の触手","波打つ縁を持つ涙型のシルエット"],
+    "colorsEn": "clear aqua blue and transparent white with pale cyan highlights",
+    "texturesEn": "jelly-like translucent liquid with glossy refractive surface, smooth wet membrane exterior",
+    "wearStyleEn": "hair dissolving into cascading gel strands dripping with luminescent slime; clothing replaced by a clinging translucent membrane that ripples and wobbles; skin partially submerged beneath a shimmering gelatinous layer",
+    "wearStyleJa": "髪が発光するゲルの糸状に溶け出してしたたり落ちる；衣服が揺れ動く半透明の膜に置き換わる；皮膚がきらめくゼラチン層の下に沈み込む",
+    "poseEn": "crouching low with arms spread wide, body wobbling and stretching like a blob mid-bounce",
+    "poseJa": "低くしゃがんで腕を左右に広げ、弾むように体がぷるぷると揺れ伸びているポーズ",
+    "auraEn": "floating water droplets and splashing liquid arcs, iridescent gel bubbles drifting upward"
+  },
+  {
+    "id": "dragon_western",
+    "nameJa": "ドラゴン（西洋）",
+    "nameEn": "Western Dragon",
+    "category": "竜",
+    "emoji": "🐉",
+    "loreJa": "ヨーロッパの伝承に登場する巨大な翼竜。四足歩行で巨大な蝙蝠のような翼を持ち、火を吐く。財宝を守る悪の存在として描かれることが多い。",
+    "motifsEn": ["massive bat-like leathery wings with ribbed membrane","thick interlocking armored scales covering entire body","muscular quadrupedal reptilian body","horned crested skull with elongated snout","spiked dorsal ridge running down spine and tail","razor-sharp talons on all four limbs","long barbed or arrow-tipped tail"],
+    "motifsJa": ["肋骨状の膜を持つ巨大な蝙蝠翼","全身を覆う厚い鎧状の連結した鱗","筋肉質な四足歩行の爬虫類の体","細長い吻を持つ角と冠毛のある頭蓋骨","背骨と尾に沿って走る棘の背びれ","四肢すべてにある鋭い鉤爪","長い有棘または矢尻型の尾"],
+    "colorsEn": "deep crimson red and charcoal black scales with molten orange underbelly highlights",
+    "texturesEn": "thick overlapping keratin scales with metallic sheen, rough ridged hide, leathery wing membrane with visible veins",
+    "wearStyleEn": "back sprouting enormous bat-like wings of dark leather; skin overlaid with interlocking crimson scale armor plates; spine decorated with a row of protruding bone spikes",
+    "wearStyleJa": "背中から巨大な暗い革の蝙蝠翼が生え出る；皮膚に深紅の鱗甲冑の板が重なり合って覆いかぶさる；背骨に突き出た骨の棘の列が飾られる",
+    "poseEn": "rearing back on hind legs with wings spread wide, neck arched and jaws open to exhale a torrent of fire",
+    "poseJa": "後脚で立ち上がり翼を大きく広げ、首を反らして火炎を吐き出すために顎を開いたポーズ",
+    "auraEn": "billowing fire and smoke breath, ember sparks swirling around the body, heat haze distortion rising from wings"
+  },
+  {
+    "id": "phoenix",
+    "nameJa": "フェニックス（不死鳥）",
+    "nameEn": "Phoenix",
+    "category": "幻獣",
+    "emoji": "🔥",
+    "loreJa": "ギリシア・エジプト神話に起源を持つ不死の霊鳥。500年ごとに炎の中で燃え尽き、灰から蘇るとされる。金・赤・紫の羽根を持つ鷲とクジャクの中間のような姿で描かれる。",
+    "motifsEn": ["brilliant gold and crimson flame-tipped feathers","peacock-like iridescent tail feathers in blue green and purple","eagle-like powerful spread wings burning at the tips","radiant golden halo of light surrounding the body","feathers gradually dissolving into living flame at the edges","crest of flame-shaped plumage atop the head","eyes glowing like molten sunlight"],
+    "motifsJa": ["金と深紅の炎の先端を持つ羽根","青・緑・紫の孔雀のような虹色の尾羽","先端が燃える鷲のような力強く広がった翼","体を取り巻く輝く黄金の後光","縁が生きた炎へと溶け込んでいく羽根","頭頂部の炎の形をした羽毛の冠","溶けた太陽光のように輝く目"],
+    "colorsEn": "blazing gold and scarlet with violet purple tail plumes and white-hot core light",
+    "texturesEn": "soft luminous feathers with fiery ember edges, radiant glow emanating from every quill, flame-like wisps at feather tips",
+    "wearStyleEn": "hair transforming into upswept flame-tipped golden feathers; clothing becoming overlapping scarlet and gold plumage; trailing sleeves dissolving into streaming fire and ember wisps",
+    "wearStyleJa": "髪が上向きの炎の先端を持つ黄金の羽根に変わる；衣服が重なり合う深紅と金の羽毛になる；伸びた袖が流れる炎と残り火の煙に溶け込む",
+    "poseEn": "arms swept wide like wings mid-take-off, head tilted back in radiant triumph, trailing flames streaming behind",
+    "poseJa": "両腕を飛翔する翼のように大きく広げ、頭を輝く勝利感で後方に傾け、炎が後方に流れるポーズ",
+    "auraEn": "spiral columns of rising embers and golden sparks, flowing streams of flame encircling the figure, radiant light rays bursting outward"
+  },
+  {
+    "id": "kraken",
+    "nameJa": "クラーケン",
+    "nameEn": "Kraken",
+    "category": "水棲",
+    "emoji": "🦑",
+    "loreJa": "北欧・スカンジナビアの海洋伝説に登場する巨大な頭足類の海獣。船を丸ごと引きずり込む無数の触腕を持ち、深海から浮上するとされる。",
+    "motifsEn": ["enormous writhing tentacles covered in circular suckers","colossal mantle body partially submerged in dark water","hooked and barbed sucker pads along tentacle underside","ink-dark mottled skin with subtle bioluminescent spots","parrot-like chitinous beak hidden in tentacle mass","massive lidded eyes with rectangular pupils","tentacles splitting the ocean surface like shattering glass"],
+    "motifsJa": ["円形の吸盤で覆われた巨大にうねる触腕","暗い海中に半身が沈む巨大な外套膜","触腕の内側に沿った鉤型・有棘の吸着パッド","かすかな生物発光の斑点を持つ墨色のまだら皮膚","触腕の塊に隠れたオウムのようなキチン質の嘴","長方形の瞳を持つ巨大な蓋のある目","破砕するガラスのように海面を割く触腕"],
+    "colorsEn": "deep ocean purple-black and dark teal with pale bioluminescent cyan accents",
+    "texturesEn": "slick moist cephalopod skin with rubbery suckers, dark mottled chromatophore patches, wet glistening membrane",
+    "wearStyleEn": "hair replaced by coiling tentacle extensions dripping with seawater; clothing wrapped in sucker-lined tentacle bands; arms merging into elongated tentacle appendages",
+    "wearStyleJa": "髪が海水を滴らせるうねる触腕の延長に置き換わる；衣服が吸盤の列のある触腕のバンドに巻かれる；腕が細長い触腕の付属肢に融合する",
+    "poseEn": "standing with tentacle arms raised and coiling outward like a crown, lower body surrounded by swirling dark water",
+    "poseJa": "触腕の腕を王冠のように上げて外にうねらせ、下半身が渦巻く暗い水に取り囲まれたポーズ",
+    "auraEn": "dark ink clouds billowing around the body, swirling whirlpool water currents, bioluminescent turquoise sparks drifting in the depths"
+  },
+  {
+    "id": "cerberus",
+    "nameJa": "ケルベロス",
+    "nameEn": "Cerberus",
+    "category": "魔獣",
+    "emoji": "🐕",
+    "loreJa": "ギリシア神話の冥界（ハデスの国）の門番。三つの頭を持つ黒い巨犬で、蛇のたてがみと蛇の尾を持つとされ、死者の魂が出て行くのを防ぐ。",
+    "motifsEn": ["three snarling canine heads with dripping fangs","mane of writhing serpents replacing neck fur","massive muscular black dog body with heavy paws","serpent tail with open hissing mouth at the tip","ember-red or flame-orange glowing eyes on all three heads","heavy iron chain or spiked collar around each neck","claws gouging the ground with each step"],
+    "motifsJa": ["滴る牙を持つ三つのうなる犬の頭","首の毛を蛇のたてがみに置き換えたうねる蛇","重い肉球を持つ筋骨たくましい黒い犬の体","先端に開いた口でしゅーしゅー言う蛇の尾","三つの頭すべての燃える赤またはオレンジ色に輝く目","各首の周りの重い鉄の鎖または棘のある首輪","一歩ごとに地面を抉る爪"],
+    "colorsEn": "jet black fur with ember-orange glowing eyes and deep red serpentine accents",
+    "texturesEn": "coarse matted black fur, rough reptilian snake scales on mane and tail, heavy iron metal collar texture",
+    "wearStyleEn": "three shadowy canine skull motifs layering above the shoulders; mane of live writhing snake braids cascading from the neck; forearms wrapped in serpentine scale bracers with fang-tip claws",
+    "wearStyleJa": "三つの影のような犬の頭骸骨モチーフが肩の上に重なる；首から生きてうねる蛇編みのたてがみが流れ落ちる；前腕が蛇鱗の腕甲で巻かれ先端に牙の爪がある",
+    "poseEn": "wide legged aggressive stance with all three heads lunging forward, chains rattling and dragging behind",
+    "poseJa": "三つの頭全てが前に突き出した広い足幅の攻撃的な姿勢、後ろで鎖がガタガタと引きずられるポーズ",
+    "auraEn": "hellfire smoke rising from paws, glowing ember sparks drifting from fur, dark sulfurous mist pooling at feet"
+  },
+  {
+    "id": "griffin",
+    "nameJa": "グリフォン",
+    "nameEn": "Griffin",
+    "category": "幻獣",
+    "emoji": "🦅",
+    "loreJa": "ギリシア・中東の伝承に登場する鷲の頭・翼と獅子の体を合わせた幻獣。「空の王者」と「百獣の王」を合わせた最強の守護者として財宝の番人ともされる。",
+    "motifsEn": ["eagle head with hooked beak and feathered neck ruff","large golden feathered wings with dark primary flight feathers","lion body covered in tawny amber fur","eagle talons replacing front paws with curved razor tips","lion's back legs and sweeping lion tail","feather-to-fur gradient transition at shoulder and chest","spiral-feathered crest on crown of head"],
+    "motifsJa": ["鉤型の嘴と羽毛の首輪飾りを持つ鷲の頭","暗い初列風切羽を持つ大きな金の羽毛翼","茶色いアンバー色の毛皮で覆われた獅子の体","湾曲した鋭い先端の鷹爪が前足に替わる","獅子の後脚と揺れる獅子の尾","肩と胸での羽根から毛皮へのグラデーション変化","頭頂部の渦巻く羽毛の冠"],
+    "colorsEn": "golden amber fur and brown-tipped white feathers with dark chocolate wing edges and pale cream chest",
+    "texturesEn": "soft layered flight feathers on wings and head, dense warm lion fur on body, sharp hard keratin beak and talons",
+    "wearStyleEn": "upper back adorned with sweeping golden feathered wings; hair crowned with eagle crest feathers; hands elongated into curved eagle talon fingers",
+    "wearStyleJa": "上背部に広がる黄金の羽根翼が飾られる；髪が鷹の冠羽で戴冠される；手が湾曲した鷹爪の指に伸びる",
+    "poseEn": "rearing back on lion haunches with wings half-spread, one eagle talon raised in a commanding strike pose",
+    "poseJa": "獅子の後脚で立ち上がり翼を半開きにして、一つの鷹爪を指揮する打撃ポーズで上げているポーズ",
+    "auraEn": "golden light rays emanating from wing tips, feather motes drifting in the air, wind currents swirling around the figure"
+  },
+  {
+    "id": "unicorn",
+    "nameJa": "ユニコーン",
+    "nameEn": "Unicorn",
+    "category": "幻獣",
+    "emoji": "🦄",
+    "loreJa": "ヨーロッパの伝承に登場する一本角の白い馬。純潔の象徴とされ、純粋な心を持つ者だけが近づくことができると言われる。角（アリコーン）には毒を浄化する力があるとされた。",
+    "motifsEn": ["single long spiraling ivory horn projecting from forehead","pure white or silver-white coat with luminous sheen","flowing mane and tail in silver or pale gold strands","graceful slender horse body with cloven hooves","iridescent shimmer on the coat surface like mother-of-pearl","soft radiant glow emanating from the horn tip","large luminous violet or silver eyes"],
+    "motifsJa": ["額から突き出た一本の長い螺旋状の象牙色の角","発光するような光沢を持つ純白または銀白の体毛","銀または淡い金色の糸状の流れるたてがみと尻尾","裂蹄を持つ優雅で細身の馬の体","真珠母のような体毛表面の虹色の輝き","角の先端から放たれる柔らかな輝く光","大きな発光する紫または銀色の目"],
+    "colorsEn": "pure snow white coat with pale silver mane and iridescent rainbow shimmer highlights",
+    "texturesEn": "silky smooth fine horse coat with opalescent glow, glossy hard spiraled horn, soft silken flowing mane strands",
+    "wearStyleEn": "a single spiraling pearlescent horn growing from the forehead; silver-white hair flowing in long ethereal strands woven with star-like light; skin taking on a faint luminous pearl glow",
+    "wearStyleJa": "額から一本の螺旋状の真珠色の角が生える；銀白の髪が星のような光の編み込みと共に長いはかない糸状に流れる；皮膚がかすかな発光する真珠の輝きを帯びる",
+    "poseEn": "front hooves raised in a graceful rear, head lowered with horn pointed forward as if charging, mane flowing backward",
+    "poseJa": "優雅に後脚立ちで前脚を上げ、突進するように角を前方に向けて頭を下げ、たてがみが後ろになびくポーズ",
+    "auraEn": "soft rainbow light arcs and prismatic sparkles drifting around the body, floating stardust motes of silver light"
+  },
+  {
+    "id": "fenrir",
+    "nameJa": "フェンリル（魔狼）",
+    "nameEn": "Fenrir",
+    "category": "魔獣",
+    "emoji": "🐺",
+    "loreJa": "北欧神話に登場するロキの息子である巨大な魔狼。神々でさえ恐れるほど急速に成長し、魔法の鎖グレイプニルで縛られる。ラグナロクでオーディンを飲み込む運命を持つ。",
+    "motifsEn": ["colossal wolf body dwarfing surrounding landscape","shaggy dark grey or black fur with frost and ash tones","gaping jaws wide enough to swallow the sun with rows of sword-like fangs","glowing amber or blood-red eyes burning in shadow","severed magical chain or binding ribbon trailing from body","paws the size of boulders crushing the ground","swirling storm winds and blizzard around the silhouette"],
+    "motifsJa": ["周囲の風景をも矮小化する巨大な狼の体","霜と灰のトーンを持つ毛深い濃いグレーまたは黒の毛皮","剣のような牙の列を持つ太陽を飲み込めるほど大きく開いた顎","影の中で燃えるアンバーまたは血のように赤い光る目","体から垂れる切れた魔法の鎖または拘束リボン","地面を砕く岩ほどの大きさの肉球","シルエットを包む渦巻く嵐の風と吹雪"],
+    "colorsEn": "charcoal black and ash grey fur with icy blue-white frost accents and blood-orange glowing eyes",
+    "texturesEn": "coarse thick layered fur with frost crystals embedded in outer coat, massive rough paw pads, heavy matted underfur",
+    "wearStyleEn": "shoulders and back draped in a massive tattered wolf fur mantle; hair becoming wild silver-grey wolf mane spiking outward; broken chain fragments decorating wrists and ankles",
+    "wearStyleJa": "肩と背中に巨大なボロボロの狼の毛皮マントが垂れかかる；髪が外側に尖る荒々しい銀グレーの狼のたてがみになる；砕けた鎖の破片が手首と足首を飾る",
+    "poseEn": "lunging forward mid-howl with head thrown back, massive paws crushing the ground, entire body in explosive forward motion",
+    "poseJa": "遠吠えの最中に前方へ突進し頭を後ろに投げ、巨大な肉球が地面を砕き、全身が爆発的な前進運動の中にあるポーズ",
+    "auraEn": "cyclone of dark storm winds and snow fragments swirling around the figure, crackling lightning arcs in surrounding air"
+  },
+  {
+    "id": "leviathan",
+    "nameJa": "リヴァイアサン",
+    "nameEn": "Leviathan",
+    "category": "水棲",
+    "emoji": "🌊",
+    "loreJa": "旧約聖書・ヘブライ神話に登場する海の巨大怪物。「うねり、巻きつくもの」を意味し、太陽のように輝く鱗と火を吐く口を持つ海竜・蛇として描かれる。",
+    "motifsEn": ["massive serpentine coiling body spanning entire ocean","impenetrable iron-hard scales shining like molten sunlight","fire-breathing mouth with clouds of smoke from nostrils","many eyes lining the body reflecting all directions","enormous thrashing tail creating tidal waves","deep sea darkness surrounding the coiling form","bioluminescent glow outlining the scale edges"],
+    "motifsJa": ["海全体にまたがる巨大な蛇状のうねる体","溶けた太陽光のように輝く鉄のように硬い鱗","鼻孔から煙雲を出す火炎を吐く口","全方向を映す体に並ぶ多数の目","津波を起こす巨大にうちつける尾","うねる形を取り囲む深海の暗闇","鱗の縁を縁取る生物発光の輝き"],
+    "colorsEn": "deep navy and black scales with molten gold shimmer and glowing orange fire-breath highlights",
+    "texturesEn": "dense interlocking armor-plate scales with metallic sun-like sheen, iron-hard impenetrable hide, bioluminescent edge glow",
+    "wearStyleEn": "back and spine covered in a ridge of overlapping sun-gilded serpent scales; flowing water dress edged in bioluminescent scale trim; eyes mirrored with a ring of golden fire-light pupils",
+    "wearStyleJa": "背中と背骨が太陽色に金で縁取られた蛇の鱗の列で覆われる；生物発光の鱗飾りで縁取られた流れる水のドレス；目が黄金の炎の瞳の輪で鏡のように映される",
+    "poseEn": "upper body twisting upward out of swirling dark water, coils visible beneath the surface, arms spread like encircling serpent coils",
+    "poseJa": "渦巻く暗い水から上半身が上方にねじれ出て、表面下に巻きが見え、腕を取り巻く蛇の巻きのように広げているポーズ",
+    "auraEn": "churning dark ocean water and spray, distant fire-glow reflected on the water surface, smoke tendrils curling upward from mouth"
+  },
+  {
+    "id": "behemoth",
+    "nameJa": "ベヒーモス",
+    "nameEn": "Behemoth",
+    "category": "魔獣",
+    "emoji": "🦏",
+    "loreJa": "旧約聖書・ヨブ記に登場する地上最大の巨獣。「骨は銅の管、四肢は鉄の棒のごとし」と記され、河辺の葦の中に潜む草食の大型哺乳類と解釈されることが多い。",
+    "motifsEn": ["elephantine or hippopotamus-like massive body","enormous muscular haunches and barrel-shaped torso","tail swaying like a cedar tree","thick hide like natural stone or weathered granite","crushing hooves or heavy padded feet","tiny eyes deep-set in enormous skull","armored bony ridges along the back and shoulders"],
+    "motifsJa": ["象またはカバのような巨大な体","巨大な筋肉質の後脚と樽型の胴体","杉の木のように揺れる尾","自然の石または風化した花崗岩のような厚い皮膚","砕き潰す蹄または重いパッドのある足","巨大な頭骸骨に深くはまり込んだ小さな目","背中と肩に沿った甲冑のような骨の突起"],
+    "colorsEn": "weathered stone grey and earthy brown hide with dark mud-caked crevices and pale ivory bone ridges",
+    "texturesEn": "thick rough pachyderm hide with deep cracked crevices, smooth polished bone ridge protrusions, coarse sparse bristle hair",
+    "wearStyleEn": "clothing textured with thick stone-grey pachyderm hide plates; shoulders broadened with enormous bony armor protrusions; feet replaced by heavy iron-like crushing hooves",
+    "wearStyleJa": "衣服が厚い石灰色の厚皮動物の皮板の質感になる；肩が巨大な骨の鎧の突起で広げられる；足が重い鉄のような砕き潰す蹄に置き換わる",
+    "poseEn": "planted wide-legged and immovable, head lowered with weight behind it, ground cracking beneath each heavy footfall",
+    "poseJa": "幅広に足を広げて不動に立ち、重みのある頭を下げ、重い一歩ごとに地面が亀裂を入れるポーズ",
+    "auraEn": "deep rumbling dust clouds and debris kicked up around massive feet, earth tremors visible as ground crack patterns radiating outward"
+  },
+  {
+    "id": "golem_rock",
+    "nameJa": "ゴーレム（岩）",
+    "nameEn": "Rock Golem",
+    "category": "精霊",
+    "emoji": "🪨",
+    "loreJa": "ユダヤ民間伝承に起源を持つ、人間が魔法で生命を与えた人形（ひとがた）の存在。額に「emet（真理）」と書かれた粘土像が命令を忠実に実行する守護者。ファンタジーでは岩や石版で作られた巨人として定着。",
+    "motifsEn": ["hulking humanoid body assembled from rough quarried stone blocks","cracks and crevices running across the stone surface","glowing magical rune or inscription on the forehead","uneven rough-hewn limbs with no fine detail","pebbles and gravel falling from joints as it moves","cave moss or lichen growing in stone cracks","hollow eye sockets glowing with inner elemental light"],
+    "motifsJa": ["粗削りの採石場の石ブロックで組み立てられた大きな人型の体","石の表面を走る亀裂と割れ目","額に輝く魔法のルーンまたは刻文字","細部のない不均等な粗削りの四肢","動くたびに関節から落ちる小石と砂利","石の亀裂に育つ洞窟の苔または地衣類","内部の元素の光で輝く空洞の目の窩"],
+    "colorsEn": "dark basalt grey and sandstone tan with mossy green lichen patches and amber inner-glow from cracks",
+    "texturesEn": "rough chiseled stone surface with jagged seams, coarse granular granite texture, smooth polished inner glow areas in crack lines",
+    "wearStyleEn": "skin cracking and reforming as rough stone plates spreading from the arms; clothing replaced by overlapping granite boulder fragments forming natural armor; a glowing rune branded on the forehead",
+    "wearStyleJa": "皮膚が亀裂を入れて腕から広がる粗い石板として再形成される；衣服が自然な鎧を形成する重なり合う花崗岩の岩塊の断片に置き換わる；額に輝くルーンが刻まれる",
+    "poseEn": "standing with fists raised in a slow powerful overhead hammer strike, stone fragments and dust raining from the impact zone",
+    "poseJa": "ゆっくりとした力強い頭上のハンマー打撃で拳を上げて立ち、衝撃ゾーンから石の破片と砂塵が降り注ぐポーズ",
+    "auraEn": "stone dust clouds billowing from each footstep, small rocks and pebble debris floating in the air, amber rune-glow emanating from body crevices"
+  },
+  {
+    "id": "ifrit",
+    "nameJa": "イフリート（炎の魔神）",
+    "nameEn": "Ifrit",
+    "category": "精霊",
+    "emoji": "🔥",
+    "loreJa": "イスラム神話・アラビア伝承に登場する煙のない火から生まれた強力なジン（精霊）の一種。巨大な翼ある煙の人型として描かれ、廃墟や地下に棲むとされる。",
+    "motifsEn": ["towering humanoid body composed of swirling smokeless fire","large bat-like or eagle-like wings made of solid flame","molten magma-like skin with visible fire burning beneath","hair of upward-streaming fire and embers","glowing golden or white-hot eyes without pupils","smoke and fire haze replacing lower body legs","muscular upper body outlined in ember-glow"],
+    "motifsJa": ["渦巻く煙のない炎で構成された高くそびえる人型の体","固体の炎で作られた大きな蝙蝠または鷲のような翼","下に炎が燃えるのが見える溶岩のような皮膚","上方に流れる炎と残り火の髪","瞳のない輝く金または白熱した目","下半身の脚を煙と火の霞に置き換える","残り火の輝きで輪郭が描かれた筋肉質な上半身"],
+    "colorsEn": "deep magma orange and crimson with white-hot core and black smoke edges, golden ember highlights",
+    "texturesEn": "liquid fire surface with viscous magma flow texture, wispy smoke wisps at the edges, blazing solid core",
+    "wearStyleEn": "hair becoming a crown of upswept living flames; clothing replaced by layered fire robes with trailing smoke wisps; skin glowing with subdermal magma light showing through cracks",
+    "wearStyleJa": "髪が上向きの生きた炎の冠になる；衣服が引きずる煙の羽衣の付いた重なり合う炎のローブに置き換わる；皮膚の亀裂から透けて見える皮下のマグマの光で輝く",
+    "poseEn": "towering over the viewer with one arm raised and fire pouring from the palm, lower body dissolving into a column of smoke and flame",
+    "poseJa": "一方の腕を上げて手のひらから炎を注ぎ、下半身が煙と炎の柱に溶け込みながら見る者の上にそびえ立つポーズ",
+    "auraEn": "erupting fire pillars and lava splashes, dense black smoke clouds billowing outward, rain of glowing embers falling around the figure"
+  },
+  {
+    "id": "undine",
+    "nameJa": "ウンディーネ（水の精霊）",
+    "nameEn": "Undine",
+    "category": "精霊",
+    "emoji": "🌊",
+    "loreJa": "パラケルススが命名した水の元素精霊。川・泉・滝に棲む女性の姿をした精霊で、月光を受けた静水のような青白い肌と、流れるように動く黒や銀の髪を持つとされる。",
+    "motifsEn": ["feminine humanoid body with moonlit pale skin and translucent quality","long flowing hair in deep black, silver, or sea-green blue that moves as if underwater","eyes reflecting the deep ocean in dark teal or stormy grey","dress or form blending seamlessly into flowing water","water droplets hovering around the body at all times","fingertips trailing liquid streams when raised","bare feet or lower body dissolving into a waterfall"],
+    "motifsJa": ["月光の下のように青白い肌と半透明の質感を持つ女性の人型の体","水中にいるかのように動く深い黒・銀・または海緑の青い長い流れる髪","暗い青緑または嵐のグレーで深海を映す目","流れる水にシームレスに溶け込むドレスまたは形","常に体の周囲に漂う水滴","上に向けると液体の流れが引きずられる指先","裸足または滝に溶け込む下半身"],
+    "colorsEn": "moonlit pale white skin with translucent aqua blue and deep teal hair, cool silver-white highlights",
+    "texturesEn": "porcelain-smooth moonlit skin with subtle translucency, flowing liquid hair with wet sheen, water surface ripple quality",
+    "wearStyleEn": "hair flowing upward and outward as if suspended in water; clothing formed from layered translucent water veils trailing liquid behind; skin with a faint moonlit blue-white luminous tint",
+    "wearStyleJa": "髪が水中に浮いているかのように上方・外方に流れる；衣服が後ろに液体を引きずる重なり合う半透明の水のベールで形成される；皮膚がかすかな月明かりの青白い発光の色合いを持つ",
+    "poseEn": "standing with one arm extended and water flowing from fingertips, head tilted gently, hair drifting upward against gravity",
+    "poseJa": "一方の腕を伸ばして指先から水が流れ、頭を穏やかに傾け、重力に逆らって髪が上方に漂うポーズ",
+    "auraEn": "curtain of mist and water droplet spray, concentric ripple rings spreading across a still water surface below, moonlight reflected in each droplet"
+  },
+  {
+    "id": "chimera",
+    "nameJa": "キマイラ",
+    "nameEn": "Chimera",
+    "category": "魔獣",
+    "emoji": "🦁",
+    "loreJa": "ギリシア神話に登場するリュキア出身の火を吐く複合怪物。前半身が獅子、背中から山羊の頭が生え、尻尾が蛇（または竜）という三種混合の姿を持ち、ベレロフォンに退治された。",
+    "motifsEn": ["lion front body with maned head and sharp fangs","goat head growing from the mid-back with curved horns","serpent or dragon head at the tail tip with forked tongue","fire breathing from the goat head at the center","patchwork of fur, scale, and hide across the body","mismatched limbs combining lion paws and goat hooves","three sets of eyes visible simultaneously at different angles"],
+    "motifsJa": ["たてがみのある頭と鋭い牙を持つ獅子の前半身","湾曲した角を持つ背中中央から生える山羊の頭","二股の舌を持つ尾の先端の蛇または竜の頭","中央の山羊の頭から吐く炎","体全体の毛皮・鱗・皮膚のつぎはぎ","獅子の爪と山羊の蹄を組み合わせた不揃いな四肢","異なる角度で同時に見える三組の目"],
+    "colorsEn": "tawny lion gold and brown-grey goat fur with dark green serpent scales and orange fire-breath accents",
+    "texturesEn": "coarse lion mane and goat bristle fur mixed with smooth serpent scales, different textures sharply delineated across body zones",
+    "wearStyleEn": "a secondary goat-horned head motif rising from the shoulder or back; clothing patched with lion fur, goat hide, and serpent scale sections; fire-breath effect emanating from the collar area",
+    "wearStyleJa": "肩または背中から山羊の角のある二次的な頭のモチーフが立ち上がる；衣服が獅子の毛皮・山羊の皮・蛇鱗のセクションでつぎはぎされる；首輪の部分から火炎吐息のエフェクトが放出される",
+    "poseEn": "all three heads snarling in different directions simultaneously, body low and coiled ready to pounce, flames licking from the goat head",
+    "poseJa": "三つの頭全てが同時に異なる方向でうなり、体を低く丸めて飛びかかる準備をし、山羊の頭から炎が舐めるポーズ",
+    "auraEn": "triple breath effects of fire, acid mist, and venom vapor from each head, clashing elemental auras swirling together"
+  },
+  {
+    "id": "hydra",
+    "nameJa": "ヒュドラ",
+    "nameEn": "Hydra",
+    "category": "魔獣",
+    "emoji": "🐍",
+    "loreJa": "ギリシア神話のレルナの湖に棲む九頭の水棲大蛇。首を一本切ると二本再生するという特徴を持ち、ヘラクレスの第二の試練として知られる。猛毒の血と息を持つ。",
+    "motifsEn": ["nine serpentine necks branching from a central body","each head with distinct fangs and forked tongue","one central immortal head larger and more ornate than others","scales in dark swamp green and black with toxic yellow-green accents","acidic venom dripping from open mouths","freshly severed neck stumps showing split regrowth emerging","serpentine body coiled in murky swamp water"],
+    "motifsJa": ["中央の体から枝分かれした九本の蛇状の首","それぞれ独特の牙と二股の舌を持つ頭","他より大きく精巧な一つの中央の不死の頭","毒性の黄緑のアクセントを持つ暗い沼緑と黒の鱗","開いた口から滴る酸性の毒液","分裂した再生が現れる新たに切断された首の切り株","濁った沼水に巻かれた蛇状の体"],
+    "colorsEn": "murky swamp green and black scales with toxic acid-yellow highlights and dark blood-red inner mouth",
+    "texturesEn": "wet glistening snake scales with slightly mucus-coated surface, dripping viscous venom, smooth serpentine neck skin",
+    "wearStyleEn": "hair splitting into multiple independent serpentine strands each with a small fanged snake head; garment hemlines dripping with acidic venom; spine ridged with a row of serpent-scale protrusions",
+    "wearStyleJa": "髪が小さな牙のある蛇の頭を持つそれぞれ独立した蛇状の糸状に分かれる；衣服の裾が酸性の毒液を滴らせる；背骨が蛇鱗の突起の列で隆起する",
+    "poseEn": "multiple heads lunging outward in all directions simultaneously, arms spread wide with serpent-hair flaring, venom dripping from outstretched hands",
+    "poseJa": "複数の頭が同時にあらゆる方向に突き出し、蛇の髪が広がりながら腕を大きく広げ、伸ばした手から毒液が滴るポーズ",
+    "auraEn": "acid mist vapor clouds and toxic yellow-green fumes, swamp water spray and dark murk surrounding the figure, severed head stumps sparking with regrowth energy"
+  },
+  {
+    "id": "basilisk",
+    "nameJa": "バジリスク",
+    "nameEn": "Basilisk",
+    "category": "魔獣",
+    "emoji": "🐊",
+    "loreJa": "ヨーロッパ中世伝承の「蛇の王」。古典ではわずか30cmの小蛇とされたが、中世には雄鶏の頭・翼・蛇の体を持つキメラ状の姿で描かれた。視線・息・接触だけで生き物を死に至らしめるとされる。",
+    "motifsEn": ["serpentine body with crown-like white diadem marking on head","medieval variant: rooster crest and beak on a serpentine body","small pupil-less or slit-pupil deadly eyes that kill on contact","forked tongue and venomous fangs","dry cracked scale pattern in sandy yellow-green","withered vegetation or cracked stone in the creature's wake","white crown marking on head gleaming like a diadem"],
+    "motifsJa": ["頭に王冠のような白い額飾りの模様を持つ蛇状の体","中世型：蛇状の体に雄鶏の冠と嘴","接触するだけで殺す小さな瞳のない、または縦長瞳の致死的な目","二股の舌と毒牙","砂っぽい黄緑色の乾いた亀裂のある鱗模様","生物の通過跡に枯れた植物または亀裂のある石","王冠飾りのように輝く頭の白い冠の模様"],
+    "colorsEn": "sandy olive green and yellow-brown scales with white diadem crown marking and red-rimmed lethal eyes",
+    "texturesEn": "dry cracked desert-sand scale texture, hard chitinous rooster-beak if medieval variant, smooth but lethal eye surface",
+    "wearStyleEn": "eyes rimmed in white-gold diadem-like markings with deadly slit pupils; dry scale-textured skin spreading from hands and neck; a small crown-like crest motif on the forehead",
+    "wearStyleJa": "目が致死的な縦長瞳を持つ白金の王冠飾りのような模様で縁取られる；乾いた鱗の質感の皮膚が手と首から広がる；額に小さな王冠型の冠毛モチーフが現れる",
+    "poseEn": "head raised with lethal gaze directed straight at the viewer, coiled serpentine body tense and still, withered plants visible around the feet",
+    "poseJa": "致死的な視線を真っ直ぐ見る者に向けて頭を上げ、蛇状の体が緊張して静止し、足元に枯れた植物が見えるポーズ",
+    "auraEn": "stone-cracking petrification dust spreading outward from the gaze, withered and scorched ground in a radius around the figure, crackling death-glow from the eyes"
+  },
+  {
+    "id": "minotaur",
+    "nameJa": "ミノタウロス",
+    "nameEn": "Minotaur",
+    "category": "魔獣",
+    "emoji": "🐂",
+    "loreJa": "ギリシア神話のクレタ島の迷宮（ラビュリントス）に幽閉された牛頭人身の怪物。クレタ王ミノスの妻が白い牡牛に産ませた息子で、アテネから贈られた生贄を喰らっていた。テセウスに退治された。",
+    "motifsEn": ["massive bull head with curved horns and flaring nostrils","muscular human torso with enormous broad shoulders","bull-like powerful legs and heavy hooved feet","dark coarse body hair on chest and arms","heavy battle axe or chain weapon as signature prop","labyrinth maze pattern scarred or tattooed on skin","red-eyed rage with foam at muzzle"],
+    "motifsJa": ["湾曲した角と開いた鼻孔を持つ巨大な牛の頭","巨大な広い肩を持つ筋肉質な人間の胴体","牛のような力強い脚と重い蹄の足","胸と腕の暗い粗い体毛","トレードマークの重いバトルアックスまたは鎖の武器","皮膚に傷跡またはタトゥーされた迷宮の迷路模様","鼻口部に泡を吹く赤い目の怒り"],
+    "colorsEn": "dark charcoal brown bull-hide skin and black fur with deep red eyes and oxidized bronze weapon accents",
+    "texturesEn": "rough coarse bull hide on head and legs, dense matted dark body hair on chest, hard keratin hoof surface",
+    "wearStyleEn": "a massive bull skull helmet or horns grown directly from the head; rough hide body wraps and leather armor with maze-pattern engravings; heavy hooved boots replacing feet",
+    "wearStyleJa": "巨大な牛の頭骸骨ヘルメットまたは頭から直接生えた角；迷宮模様の彫刻を持つ粗い皮のボディラップと革の鎧；足を重い蹄のブーツに置き換える",
+    "poseEn": "charging forward with head lowered and horns aimed ahead, axe raised overhead, earth trembling under heavy hooved stride",
+    "poseJa": "頭を低く下げて角を前方に向け、斧を頭上に上げ、重い蹄の歩みで大地を震わせながら前方に突進するポーズ",
+    "auraEn": "dust cloud kicked up by charging hooves, snorting breath steam in cold air, stone wall debris crumbling in the background"
+  },
+  {
+    "id": "medusa",
+    "nameJa": "メデューサ（ゴルゴン）",
+    "nameEn": "Medusa",
+    "category": "魔獣",
+    "emoji": "🐍",
+    "loreJa": "ギリシア神話のゴルゴン三姉妹の一人で唯一の死すべき者。蛇の髪と石化の魔眼を持ち、アテナの呪いで美しい乙女から変身したとも伝わる。金の翼と青銅の手を持つとも描かれる。",
+    "motifsEn": ["head of writhing live serpents replacing all hair strands","stone-cold pale skin with a slight grey petrification tint","enormous wide-staring eyes with pupil-less stone gaze","boar-tusk fangs and a wide open threatening mouth","golden winged accessories or literal golden wings on back","bronze or gold scaled hands with claw-like nails","stone statues of former victims frozen in terrified poses nearby"],
+    "motifsJa": ["髪の全ての糸がうねる生きた蛇に置き換わった頭","わずかな灰色の石化の色合いを持つ石のように冷たい青白い皮膚","瞳のない石化の眼差しを持つ大きく見開いた目","猪の牙と大きく開いた脅しつける口","金の翼の装飾品または背中の文字通りの金の翼","鉤爪のような爪を持つ青銅または金の鱗の手","近くに恐怖で凍りついた旧来の犠牲者の石像"],
+    "colorsEn": "pale ash white skin with grey stone tint, vivid green or gold serpent hair, golden bronze wing accents",
+    "texturesEn": "smooth stone-cold skin with slight stone dust surface, writhing smooth snake scales in hair, hard metallic golden bronze hand texture",
+    "wearStyleEn": "hair fully replaced by a crown of coiling serpents in green and gold; skin taking on a marble-smooth grey stone quality; eyes rimmed with gold and glowing with cold stone-grey petrifying light",
+    "wearStyleJa": "髪が緑と金の巻きつく蛇の冠に完全に置き換わる；皮膚が大理石の滑らかな灰色の石の質感になる；目が金で縁取られ冷たい石灰色の石化の光で輝く",
+    "poseEn": "head tilted down with gaze angled upward toward viewer, snake hair fanning outward like a threatening crown, arms spread wide",
+    "poseJa": "視線を見る者に向けて頭を傾け下げ、蛇の髪が脅しつける王冠のように外側に広がり、腕を大きく広げるポーズ",
+    "auraEn": "stone dust crumbling from the gaze direction, creeping petrification frost spreading across nearby surfaces, cold grey mist swirling around the head"
+  },
+  {
+    "id": "harpy",
+    "nameJa": "ハーピー",
+    "nameEn": "Harpy",
+    "category": "魔獣",
+    "emoji": "🦅",
+    "loreJa": "ギリシア神話の嵐の精霊。上半身が女性で下半身が猛禽類という姿を持つ。嵐と共に現れ、食物を奪い汚染する存在として恐れられた。「ハルピュイア」（ひったくる者）が語源。",
+    "motifsEn": ["woman's face and upper torso with wild disheveled hair","large bird wings replacing arms, feathered from shoulder to tip","raptor talons replacing feet and lower legs","feathered lower body blending woman form into bird body","hollow-cheeked gaunt pale face with hungry expression","wind-whipped wild tangled hair streaming backward","razor-sharp hooked talons on both feet"],
+    "motifsJa": ["乱れた荒れ狂う髪を持つ女性の顔と上半身","肩から先端まで羽毛で覆い腕を置き換えた大きな鳥の翼","足と下脚を置き換えた猛禽類の鉤爪","女性の形が鳥の体に溶け込む羽毛の下半身","飢えた表情の頬の落ちたやつれた青白い顔","後ろになびく風に吹かれた荒れた絡まった髪","両足の剃刀のように鋭い鉤型の爪"],
+    "colorsEn": "pale ash white skin with dark brown and black raptor feathers, golden yellow talons and feral grey-green eyes",
+    "texturesEn": "soft downy raptor feathers on wings and lower body, rough hollow-boned talon surface, pale thin human skin on upper body",
+    "wearStyleEn": "arms dissolving into massive dark raptor wings starting at the shoulders; feet replaced by elongated golden raptor talons; wild disheveled hair streaming backward as if mid-flight in storm winds",
+    "wearStyleJa": "腕が肩から始まる巨大な暗い猛禽類の翼に溶け込む；足が細長い黄金の猛禽類の爪に置き換わる；嵐の風の中を飛んでいるかのように野性的な乱れた髪が後ろになびく",
+    "poseEn": "diving forward with wings swept back, talons extended forward ready to snatch, wind-blown hair trailing behind in a steep attack dive",
+    "poseJa": "翼を後ろに引いて前方に急降下し、ひったくる準備の爪を前方に伸ばし、急峻な攻撃急降下で風になびく髪が後方に流れるポーズ",
+    "auraEn": "howling storm winds and gale-force gusts swirling around the figure, loose feathers scattered by wind currents, dust and debris from the downdraft"
+  },
+  {
+    "id": "siren",
+    "nameJa": "セイレーン（人魚）",
+    "nameEn": "Siren",
+    "category": "水棲",
+    "emoji": "🧜",
+    "loreJa": "ギリシア神話では本来は鳥の下半身を持つ女性の怪物だったが、中世以降に人魚（上半身が女性・下半身が魚）の姿で定着した。歌声で船乗りを惑わせ難破させる存在として描かれる。",
+    "motifsEn": ["upper human feminine body with long flowing wet hair","fish tail replacing legs from the hips downward","iridescent fish scales on the tail in aquamarine and silver","luminous skin with subtle bioluminescent glow","coral, shell, and pearl accessories woven into hair","wide luminous eyes reflecting ocean depths","water flowing around the figure as she sings"],
+    "motifsJa": ["長い流れる濡れた髪を持つ人間の女性の上半身","腰から下で脚を置き換える魚の尾","アクアマリンと銀の虹色の魚の鱗の尾","わずかな生物発光の輝きを持つ発光する皮膚","髪に織り込まれた珊瑚・貝・真珠のアクセサリー","海の深みを映す大きな発光する目","歌いながら人物の周囲を流れる水"],
+    "colorsEn": "aquamarine and silver fish scales with pearlescent white skin and teal-blue luminous eyes",
+    "texturesEn": "smooth wet fish scale surface with iridescent rainbow sheen, soft luminous human skin on upper body, flowing wet hair",
+    "wearStyleEn": "lower body wrapped in iridescent fish-scale fabric that merges seamlessly into a tail shape; hair adorned with coral branches, shells and pearls; skin with soft bioluminescent glowing patches",
+    "wearStyleJa": "下半身が尾の形にシームレスに合体する虹色の魚の鱗の生地で包まれる；髪が珊瑚の枝・貝・真珠で飾られる；皮膚に柔らかな生物発光の輝くパッチがある",
+    "poseEn": "seated or floating with tail curled beneath, one hand raised to the face in a singing gesture, head tilted back in an entrancing melody",
+    "poseJa": "尾を下に丸めて座るまたは浮かび、一方の手を歌うジェスチャーで顔に上げ、うっとりするメロディで頭を後ろに傾けるポーズ",
+    "auraEn": "musical note trails of light drifting from mouth, concentric sound wave ripples spreading across the water surface, bioluminescent glow reflecting off surrounding water"
+  },
+  {
+    "id": "nine_tailed_fox",
+    "nameJa": "九尾の狐",
+    "nameEn": "Nine-Tailed Fox",
+    "category": "精霊",
+    "emoji": "🦊",
+    "loreJa": "中国・日本・朝鮮の伝承に登場する妖狐。尾の数が多いほど古く強い存在で、千年生きた九尾は白または金色の体毛を持つ天狐（テンコ）へと変化する。化身して人間の姿をとる能力を持つ。",
+    "motifsEn": ["nine large elegant fox tails fanning out behind the body","pure white or luminous golden fur coat","foxfire spirit flames hovering around each tail tip","amber or violet glowing slitted fox eyes","sharp refined fox facial features with elegant ears","celestial divine light aura surrounding the tails","ghostly orb-lights of foxfire floating in the air"],
+    "motifsJa": ["体の後ろに広がる九本の大きく優雅な狐の尾","純白または発光する黄金の毛皮の体毛","各尾の先端に漂う狐火の霊炎","アンバーまたは紫の光る縦長の狐の目","精巧な耳を持つ鋭く洗練された狐の顔の特徴","尾を取り巻く天上の神聖な光の後光","空中に浮かぶ狐火の幽霊のような光の玉"],
+    "colorsEn": "celestial snow white or pale gold fur with silver-white tail highlights and amber-violet glowing eyes",
+    "texturesEn": "soft silken celestial fox fur with luminous glow quality, flowing ethereal tail plumes like smoke-silk, sharp clean whisker lines",
+    "wearStyleEn": "nine flowing fox tail plumes attached at the waist and fanning out behind; white-gold fox ears rising from the hair; eyes transformed into luminous amber slit-pupil fox eyes",
+    "wearStyleJa": "腰に取り付けられて後ろに広がる九本の流れる狐の尾の羽毛；髪から立ち上がる白金の狐の耳；発光するアンバーの縦長の瞳の狐の目に変わった目",
+    "poseEn": "standing in a graceful sideways profile with all nine tails spread wide in a dramatic fan, one arm raised and foxfire orbs drifting from the palm",
+    "poseJa": "九本全ての尾を劇的な扇形に広げた優雅な横向きのプロフィールで立ち、一方の腕を上げて手のひらから狐火の光の玉が漂うポーズ",
+    "auraEn": "golden foxfire spirit orbs drifting in circular patterns around the body, silver tail-glow wisps trailing through the air, celestial light rays emanating from the tail fan"
+  },
+  {
+    "id": "mimic",
+    "nameJa": "ミミック",
+    "nameEn": "Mimic",
+    "category": "定番",
+    "emoji": "📦",
+    "loreJa": "ダンジョンズ＆ドラゴンズに登場する擬態モンスター。宝箱に化けてダンジョン探索者を待ち伏せし、触れた者を粘着液で拘束して捕食する。自然の体色は灰色の岩に似た石状の皮膚を持つ。",
+    "motifsEn": ["rectangular treasure chest shape with hidden monster within","wooden chest texture splitting open to reveal rows of sharp teeth","wide toothy grin along the chest lid as a massive mouth","multiple eyeballs appearing from the hinges or chest surface","pseudopod tentacle limbs emerging from the corners","sticky adhesive goo dripping from the interior edges","stone-grey base skin with chameleon-like wood grain coating"],
+    "motifsJa": ["内部に潜む怪物を持つ長方形の宝箱の形","鋭い歯の列を露出するために割れる木製の宝箱の質感","蓋に沿った巨大な口として広い歯を見せる笑み","ヒンジまたは宝箱の表面に現れる複数の眼球","角から生え出る偽足の触手の四肢","内側の縁から滴る粘着性の接着剤状の粘液","カメレオンのような木目コーティングを持つ石灰色のベース皮膚"],
+    "colorsEn": "weathered brown wood-grain exterior disguise with grey stone interior skin, red-rimmed yellow eyeballs and pink wet interior mouth",
+    "texturesEn": "rough wood plank exterior surface texture, smooth wet mucus-coated interior mouth lining, rubbery pseudopod appendage surface",
+    "wearStyleEn": "clothing shaped and patterned like wooden chest panels with lock hasp details; a wide grinning toothed mouth motif across the chest; roving eyes appearing on unexpected surfaces of the outfit",
+    "wearStyleJa": "錠前の留め金の細部を持つ木製の宝箱パネルのような形と模様の衣服；胸に幅広い歯を見せる笑みのモチーフ；衣装の予期しない表面に現れる動き回る目",
+    "poseEn": "hinged chest-lid jaw flung wide open mid-bite, pseudopod arms lunging outward, sticky drool stringing from teeth",
+    "poseJa": "噛みつきの最中にヒンジのある宝箱の蓋の顎を大きく開け、偽足の腕が外に突き出し、歯から粘着よだれが糸を引くポーズ",
+    "auraEn": "dripping adhesive slime pooling on the floor, scattered fake gold coins and loot items as decoy props, faint glimmer of false treasure light to attract victims"
+  },
+  {
+    "id": "treant",
+    "nameJa": "トレント（樹木の巨人）",
+    "nameEn": "Treant",
+    "category": "精霊",
+    "emoji": "🌳",
+    "loreJa": "トールキンの「エント」を起源とし、D＆Dで「トレント」として定着した樹木の精霊の巨人。樹木と見分けがつかない擬態能力を持ち、森の守護者として機能する。樹齢に応じて強大な力を持つ。",
+    "motifsEn": ["enormous humanoid body composed of interlocking tree trunk segments","bark-textured skin with deep fissures and lichen patches","long branch-like arms ending in twig-cluster hands","root mass for feet spreading into the ground","face carved into the bark with deep-set hollow eyes glowing green","leafy canopy hair growing from the crown of the head","ivy vines and moss covering the entire body surface"],
+    "motifsJa": ["連結した木の幹のセグメントで構成された巨大な人型の体","地衣類のパッチと深い亀裂を持つ樹皮の質感の皮膚","枝束の手で終わる長い枝のような腕","地面に広がる根の塊の足","緑に輝く深くくぼんだ空洞の目を持つ樹皮に刻まれた顔","頭頂部から育つ葉の天蓋の髪","全身の表面を覆うアイビーの蔓と苔"],
+    "colorsEn": "deep oak brown and ash grey bark with dark green moss patches, amber glowing hollow eyes, autumn gold and green leaf accents",
+    "texturesEn": "rough deeply grooved bark surface, soft moss and lichen texture patches, smooth inner wood grain visible in cracks, dense leafy canopy growth",
+    "wearStyleEn": "skin transformed into rough bark-textured plates cracking and splitting across arms and torso; hair becoming a canopy of living leaves and twigs; fingers elongating into grasping branch-like extensions",
+    "wearStyleJa": "皮膚が腕と胴体全体で亀裂を入れて割れる粗い樹皮の質感の板に変わる；髪が生きた葉と小枝の天蓋になる；指が掴む枝のような延長部分に細長くなる",
+    "poseEn": "rising from a stationary tree posture into motion, one massive branch-arm sweeping wide, roots visibly tearing free from the ground",
+    "poseJa": "静止した木のポーズから動きへと立ち上がり、一本の巨大な枝腕を大きく払い、根が地面から明らかに引き裂かれるポーズ",
+    "auraEn": "swirling leaves and forest debris kicked up by movement, earth cracking and roots erupting from the ground below, green nature-glow emanating from hollow eyes and bark cracks"
+  },
+  {
+    "id": "will_o_wisp",
+    "nameJa": "ウィルオウィスプ（鬼火）",
+    "nameEn": "Will-o'-the-Wisp",
+    "category": "アンデッド・怪異",
+    "emoji": "👻",
+    "loreJa": "ヨーロッパや世界各地の民間伝承に登場する沼地・湿地帯の怪火。緑・青・白の光の球として現れ、旅人を誘い込んで迷わせる。科学的には沼地のガスが発火した現象と説明される。",
+    "motifsEn": ["small orb of floating cold blue-green light with no solid form","soft pulsing glow that brightens and dims rhythmically","flickering light with occasional sparks or trailing wisp tails","multiplying into clusters of several lights moving in patterns","no face or body - pure floating luminescent energy","moving silently and erratically against wind direction","surrounded by thin wisps of pale light smoke"],
+    "motifsJa": ["固体の形を持たない浮遊する冷たい青緑の光の小さな球","リズミカルに明るくなったり暗くなったりする柔らかな脈動する輝き","時折の火花または引きずる煙状の尾を持つちらつく光","パターンを描いて動くいくつかの光のクラスターに増殖","顔も体もない純粋に浮遊する発光エネルギー","風の方向に逆らって静かにかつ不規則に動く","薄い青白い光の煙の細い煙状のものに取り囲まれる"],
+    "colorsEn": "cold cyan-blue and pale green with ghost white core and faint violet outer glow",
+    "texturesEn": "pure light with no physical texture, soft luminous glow quality, translucent wispy smoke-light trailing edge",
+    "wearStyleEn": "multiple glowing orb lights orbiting the body like attendant spirits; skin taking on a pale cold blue-green luminous tint; clothing edges dissolving into wisping trails of ghostly pale light",
+    "wearStyleJa": "複数の輝く光の球が随伴する霊のように体の周囲を回る；皮膚が青白い冷たい青緑の発光の色合いになる；衣服の縁が幽霊のような青白い光の漂う尾に溶け込む",
+    "poseEn": "standing with arms slightly raised and tilted, body half-dissolved into floating light particles, multiple wisp orbs circling the figure at different heights",
+    "poseJa": "腕をわずかに上げて傾け、体が半分浮遊する光の粒子に溶け込み、複数の煙状の光の球が異なる高さで人物の周囲を回るポーズ",
+    "auraEn": "cluster of drifting cyan spirit orbs floating in slow spirals around the figure, thin trails of pale light smoke connecting each orb, cold blue-green bioluminescent mist pooling at the feet"
+  }
+];
+
+// ==================== STYLES ====================
+const STYLES = [
+  {
+    id: "chibi3d",
+    nameJa: "ちびキャラ・グロッシー3D風",
+    descJa: "つややかな質感のちびキャラ。映画のワンシーンのような奥行きのある背景と、床への映り込みが特徴。",
+    coreEn: "chibi anime girl in glossy semi-realistic 3DCG anime render style, large expressive eyes, small body with big head proportions, ultra-detailed translucent and glossy materials",
+    sceneEn: "cinematic blurred modern architectural interior background with large windows, highly reflective polished floor mirroring the character, cool desaturated blue-grey palette with soft diffused lighting, shallow depth of field",
+    finishEn: "masterpiece quality, intricate material detail, dynamic full-body composition",
+    poseHintEn: "dynamic mid-motion full-body pose viewed from a slightly low angle",
+    arDefault: "9:16"
+  },
+  {
+    id: "cardart",
+    nameJa: "トレーディングカード風",
+    descJa: "装飾フレームとタイポグラフィをあしらったフラットなカードイラスト。モチーフアイコンが散りばめられ、脚がフレームから飛び出す構図。",
+    coreEn: "flat 2D anime illustration designed as an ornate trading card, bold graphic linework, limited color palette on a deep navy background, distressed vintage print texture",
+    sceneEn: "decorative rectangular card frame with ornamental borders, glitch-style lettering and large bold title typography at the bottom, suit symbols and scattered motif icons filling the background, one leg or arm dynamically extending beyond the card frame",
+    finishEn: "screen-print texture, poster-like composition, high design density",
+    poseHintEn: "seated or reclining pose composed inside the card frame, one limb breaking out of the frame toward the viewer",
+    arDefault: "3:4"
+  },
+  {
+    id: "watercolor",
+    nameJa: "水彩絵本風",
+    descJa: "細い線画とやわらかな水彩のタッチ。草花や小動物に囲まれた、あたたかく穏やかな絵本のような画面。",
+    coreEn: "delicate fine ink line art with soft watercolor washes, gentle storybook illustration style, warm muted earthy pastel palette, hand-drawn organic texture",
+    sceneEn: "lying or resting in a lush meadow of grasses and tiny wildflowers, surrounded by many small creatures related to the monster motif, top-down or soft diagonal viewpoint, tender peaceful atmosphere",
+    finishEn: "subtle paper texture, airy negative space, soft natural daylight",
+    poseHintEn: "relaxed lying or gently reclining pose with a soft smile, one arm behind the head or resting on a small creature",
+    arDefault: "1:1"
+  }
+];
+
+// ==================== BLEND OPTIONS ====================
+const BLEND_EN = {
+  subtle:  "subtle monster accents: only hair ornaments, small accessories and faint aura hint at the monster",
+  partial: "clothing and hair are partially transformed into the monster's materials while the face and body stay human",
+  full:    "the character's entire hair and outfit are made of the monster's materials, fully fused yet keeping a cute human silhouette"
+};
+const BLEND_JA = {
+  subtle:  "ワンポイント纏い：ヘアアクセや小物にモンスターの意匠をほんのりあしらった控えめスタイル",
+  partial: "しっかり纏い：髪と衣服がモンスターの素材に部分的に変容しつつも、顔と体は人間のまま",
+  full:    "完全融合：全身の髪と衣装がモンスターの素材で構成され、完全に融合しながらも可愛らしい人型のシルエットを保つ"
+};
+
+// ==================== STATE ====================
+let state = {
+  imageDataUrl: null,
+  charMemo: "",
+  selectedMonsterId: null,
+  selectedStyleId: null,
+  blend: "partial",
+  mjCheck: false,
+  activeCategory: "すべて"
+};
+
+// ==================== REFS ====================
+const uploadZone   = document.getElementById("uploadZone");
+const fileInput    = document.getElementById("fileInput");
+const previewWrap  = document.getElementById("previewWrap");
+const previewImg   = document.getElementById("previewImg");
+const removeImg    = document.getElementById("removeImg");
+const charMemo     = document.getElementById("charMemo");
+const categoryTabs = document.getElementById("categoryTabs");
+const searchBox    = document.getElementById("searchBox");
+const monsterGrid  = document.getElementById("monsterGrid");
+const detailPanel  = document.getElementById("detailPanel");
+const styleGrid    = document.getElementById("styleGrid");
+const generateBtn  = document.getElementById("generateBtn");
+const generateHint = document.getElementById("generateHint");
+const outputArea   = document.getElementById("outputArea");
+const promptEnEl   = document.getElementById("promptEn");
+const promptJaEl   = document.getElementById("promptJa");
+const copyEnBtn    = document.getElementById("copyEn");
+const copyJaBtn    = document.getElementById("copyJa");
+const mjCheck      = document.getElementById("mjCheck");
+
+// ==================== IMAGE UPLOAD ====================
+function handleFile(file) {
+  if (!file) return;
+  const allowed = ["image/jpeg", "image/png", "image/webp"];
+  if (!allowed.includes(file.type)) {
+    alert("JPEG / PNG / WebP 形式の画像を選んでください。");
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    alert("ファイルサイズが10MBを超えています。より小さい画像を使ってください。");
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    state.imageDataUrl = e.target.result;
+    previewImg.src = state.imageDataUrl;
+    uploadZone.style.display = "none";
+    previewWrap.classList.add("visible");
+  };
+  reader.readAsDataURL(file);
+}
+
+fileInput.addEventListener("change", () => handleFile(fileInput.files[0]));
+
+uploadZone.addEventListener("dragover", (e) => { e.preventDefault(); uploadZone.classList.add("drag-over"); });
+uploadZone.addEventListener("dragleave", () => uploadZone.classList.remove("drag-over"));
+uploadZone.addEventListener("drop", (e) => {
+  e.preventDefault();
+  uploadZone.classList.remove("drag-over");
+  handleFile(e.dataTransfer.files[0]);
+});
+
+removeImg.addEventListener("click", () => {
+  state.imageDataUrl = null;
+  fileInput.value = "";
+  previewImg.src = "";
+  previewWrap.classList.remove("visible");
+  uploadZone.style.display = "";
+});
+
+charMemo.addEventListener("input", () => { state.charMemo = charMemo.value.trim(); });
+
+// ==================== CATEGORY TABS ====================
+const CATEGORIES = ["すべて", "定番", "竜", "幻獣", "水棲", "精霊", "魔獣", "アンデッド・怪異"];
+
+function buildTabs() {
+  categoryTabs.innerHTML = "";
+  CATEGORIES.forEach(cat => {
+    const btn = document.createElement("button");
+    btn.className = "tab-btn" + (cat === state.activeCategory ? " active" : "");
+    btn.textContent = cat;
+    btn.addEventListener("click", () => {
+      state.activeCategory = cat;
+      buildTabs();
+      renderMonsters();
+    });
+    categoryTabs.appendChild(btn);
+  });
+}
+
+// ==================== MONSTER GRID ====================
+function getFilteredMonsters() {
+  const q = searchBox.value.trim().toLowerCase();
+  return MONSTERS.filter(m => {
+    const catMatch = state.activeCategory === "すべて" || m.category === state.activeCategory;
+    if (!catMatch) return false;
+    if (!q) return true;
+    return m.nameJa.toLowerCase().includes(q) || m.nameEn.toLowerCase().includes(q);
+  });
+}
+
+function renderMonsters() {
+  const filtered = getFilteredMonsters();
+  monsterGrid.innerHTML = "";
+  if (filtered.length === 0) {
+    monsterGrid.innerHTML = '<div class="no-results">該当するモンスターが見つかりません</div>';
+    return;
+  }
+  filtered.forEach(m => {
+    const card = document.createElement("div");
+    card.className = "monster-card" + (m.id === state.selectedMonsterId ? " selected" : "");
+    card.innerHTML = `
+      <span class="monster-emoji">${m.emoji}</span>
+      <div class="monster-name-ja">${m.nameJa}</div>
+      <div class="monster-name-en">${m.nameEn}</div>
+    `;
+    card.addEventListener("click", () => {
+      state.selectedMonsterId = m.id;
+      renderMonsters();
+      showDetail(m);
+      updateGenerateState();
+    });
+    monsterGrid.appendChild(card);
+  });
+}
+
+function showDetail(m) {
+  const motifsHtml = m.motifsJa.slice(0, 5).map(t => `<span class="chip">${t}</span>`).join("");
+  detailPanel.innerHTML = `
+    <h3>${m.emoji} ${m.nameJa} <span style="font-size:13px;color:var(--text-muted);font-weight:400;">${m.nameEn}</span></h3>
+    <div class="detail-lore">${m.loreJa}</div>
+    <div class="detail-row">
+      <div class="detail-row-label">モチーフ</div>
+      <div class="chip-list">${motifsHtml}</div>
+    </div>
+    <div class="detail-row">
+      <div class="detail-row-label">纏い方</div>
+      <div class="detail-text">${m.wearStyleJa}</div>
+    </div>
+    <div class="detail-row">
+      <div class="detail-row-label">ポーズ</div>
+      <div class="detail-text">${m.poseJa}</div>
+    </div>
+  `;
+  detailPanel.classList.add("visible");
+}
+
+searchBox.addEventListener("input", renderMonsters);
+
+// ==================== STYLE GRID ====================
+function buildStyles() {
+  styleGrid.innerHTML = "";
+  STYLES.forEach(s => {
+    const card = document.createElement("div");
+    card.className = "style-card" + (s.id === state.selectedStyleId ? " selected" : "");
+    card.innerHTML = `
+      <div class="style-name">${s.nameJa}</div>
+      <div class="style-desc">${s.descJa}</div>
+      <span class="style-ar">デフォルト比率: ${s.arDefault}</span>
+    `;
+    card.addEventListener("click", () => {
+      state.selectedStyleId = s.id;
+      buildStyles();
+      updateGenerateState();
+    });
+    styleGrid.appendChild(card);
+  });
+}
+
+// ==================== BLEND RADIOS ====================
+document.querySelectorAll('input[name="blend"]').forEach(radio => {
+  radio.addEventListener("change", () => {
+    state.blend = radio.value;
+    document.querySelectorAll(".radio-label").forEach(lbl => lbl.classList.remove("checked"));
+    radio.closest(".radio-label").classList.add("checked");
+  });
+});
+
+mjCheck.addEventListener("change", () => { state.mjCheck = mjCheck.checked; });
+
+// ==================== GENERATE STATE ====================
+function updateGenerateState() {
+  const ok = state.selectedMonsterId && state.selectedStyleId;
+  generateBtn.disabled = !ok;
+  if (!state.selectedMonsterId && !state.selectedStyleId) {
+    generateHint.textContent = "モンスターと画風を選んでください";
+  } else if (!state.selectedMonsterId) {
+    generateHint.textContent = "モンスターを選んでください";
+  } else if (!state.selectedStyleId) {
+    generateHint.textContent = "画風を選んでください";
+  } else {
+    generateHint.textContent = "";
+  }
+}
+
+// ==================== PROMPT BUILD ====================
+function buildPromptEn(monster, style) {
+  // 1. style.coreEn
+  const parts = [style.coreEn];
+
+  // 2. character reference
+  let charRef;
+  if (state.imageDataUrl) {
+    charRef = "the character from the attached reference image, keeping her face, hairstyle and identity recognizable";
+    if (state.charMemo) charRef += ` (${state.charMemo})`;
+  } else {
+    charRef = "a cute anime girl character";
+    if (state.charMemo) charRef += ` (${state.charMemo})`;
+  }
+  parts.push(charRef);
+
+  // 3. blend
+  parts.push(BLEND_EN[state.blend]);
+
+  // 4. monster motifs (3-5)
+  const motifs5 = monster.motifsEn.slice(0, 5).join(", ");
+  parts.push(`adorned with ${monster.nameEn} motifs — ${monster.wearStyleEn}, ${motifs5}, ${monster.texturesEn}, color scheme of ${monster.colorsEn}`);
+
+  // 5. pose
+  parts.push(`${monster.poseEn}, ${style.poseHintEn}`);
+
+  // 6. aura
+  parts.push(`surrounded by ${monster.auraEn}`);
+
+  // 7. sceneEn (cardart: replace title typography with monster name)
+  let scene = style.sceneEn;
+  if (style.id === "cardart") {
+    scene = scene.replace(
+      /large bold title typography at the bottom/,
+      `large bold title typography at the bottom with bold title text "${monster.nameEn.toUpperCase()}"`
+    );
+  }
+  parts.push(scene);
+
+  // 8. finishEn
+  parts.push(style.finishEn);
+
+  // 9. MJ params
+  let prompt = parts.join(", ");
+  if (state.mjCheck) {
+    prompt += ` --niji 6 --ar ${style.arDefault}`;
+  }
+
+  return prompt;
+}
+
+function buildPromptJa(monster, style) {
+  const lines = [];
+
+  lines.push(`【画風】${style.nameJa} — ${style.descJa}`);
+
+  if (state.imageDataUrl) {
+    let charDesc = "添付した参照画像のキャラクター（顔・髪型・個性を保持）";
+    if (state.charMemo) charDesc += `（特徴メモ：${state.charMemo}）`;
+    lines.push(`【キャラ】${charDesc}`);
+  } else {
+    let charDesc = "可愛いアニメ風女の子キャラクター";
+    if (state.charMemo) charDesc += `（特徴メモ：${state.charMemo}）`;
+    lines.push(`【キャラ】${charDesc}`);
+  }
+
+  lines.push(`【纏い度】${BLEND_JA[state.blend]}`);
+
+  const motifs5ja = monster.motifsJa.slice(0, 5).join("、");
+  lines.push(`【モンスター纏い】${monster.nameJa}（${monster.nameEn}）のモチーフを纏う — ${monster.wearStyleJa}。モチーフ要素：${motifs5ja}`);
+
+  lines.push(`【ポーズ】${monster.poseJa}`);
+  lines.push(`【オーラ・背景エフェクト】${monster.auraEn}（英語表記のまま画像生成AIに渡してください）`);
+
+  if (style.id === "cardart") {
+    lines.push(`【背景・シーン】${style.descJa} カードタイトルは「${monster.nameEn.toUpperCase()}」を使用`);
+  } else {
+    lines.push(`【背景・シーン】${style.descJa}`);
+  }
+
+  if (state.mjCheck) {
+    lines.push(`【MJパラメータ】--niji 6 --ar ${style.arDefault}`);
+  }
+
+  return lines.join("\n");
+}
+
+// ==================== GENERATE ====================
+generateBtn.addEventListener("click", () => {
+  const monster = MONSTERS.find(m => m.id === state.selectedMonsterId);
+  const style   = STYLES.find(s => s.id === state.selectedStyleId);
+  if (!monster || !style) return;
+
+  const en = buildPromptEn(monster, style);
+  const ja = buildPromptJa(monster, style);
+
+  promptEnEl.textContent = en;
+  promptJaEl.textContent = ja;
+
+  outputArea.classList.add("visible");
+  copyEnBtn.textContent = "コピー";
+  copyEnBtn.classList.remove("copied");
+  copyJaBtn.textContent = "コピー";
+  copyJaBtn.classList.remove("copied");
+
+  setTimeout(() => {
+    outputArea.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, 100);
+});
+
+// ==================== COPY ====================
+function copyText(text, btn) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => showCopied(btn)).catch(() => fallbackCopy(text, btn));
+  } else {
+    fallbackCopy(text, btn);
+  }
+}
+
+function fallbackCopy(text, btn) {
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.cssText = "position:fixed;top:-9999px;left:-9999px;opacity:0;";
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try {
+    document.execCommand("copy");
+    showCopied(btn);
+  } catch (e) {
+    alert("コピーに失敗しました。手動でテキストを選択してコピーしてください。");
+  }
+  document.body.removeChild(ta);
+}
+
+function showCopied(btn) {
+  btn.textContent = "コピーしました ✓";
+  btn.classList.add("copied");
+  setTimeout(() => {
+    btn.textContent = "コピー";
+    btn.classList.remove("copied");
+  }, 2000);
+}
+
+copyEnBtn.addEventListener("click", () => copyText(promptEnEl.textContent, copyEnBtn));
+copyJaBtn.addEventListener("click", () => copyText(promptJaEl.textContent, copyJaBtn));
+
+// ==================== INIT ====================
+buildTabs();
+renderMonsters();
+buildStyles();
+updateGenerateState();
+</script>
+</body>
+</html>

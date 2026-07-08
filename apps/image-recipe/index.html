@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>画像レシピ セルフチェック</title>
+<style>
+  :root{
+    --teal:#0f8a8a; --teal-d:#0b5e5e; --teal-l:#e6f4f4;
+    --pink:#e8336d; --yellow:#f5c518; --green:#16a34a;
+    --cream:#fdf6ec; --ink:#243b3b; --muted:#6b8585;
+    --line:#d9e6e6; --card:#ffffff; --bad:#d64545;
+    --shadow:0 6px 18px rgba(11,94,94,.10);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:"Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif;
+    background:var(--cream); color:var(--ink); line-height:1.7; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:920px; margin:0 auto; padding:18px 16px 80px;}
+
+  /* ヘッダー */
+  header.app{
+    background:linear-gradient(135deg,var(--teal),var(--teal-d));
+    color:#fff; border-radius:18px; padding:18px 20px; box-shadow:var(--shadow);
+    display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between;
+  }
+  header.app h1{font-size:1.25rem; margin:0; display:flex; align-items:center; gap:8px;}
+  header.app .sub{font-size:.8rem; opacity:.85; margin-top:2px;}
+  .proj-bar{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+  select,input,textarea{font-family:inherit; font-size:1rem; color:var(--ink);}
+  select.proj{
+    border:none; border-radius:10px; padding:8px 12px; background:#fff; color:var(--ink); font-weight:700; min-width:160px;
+  }
+  .btn{
+    border:none; border-radius:10px; padding:8px 14px; font-weight:700; cursor:pointer; font-size:.9rem;
+    background:#fff; color:var(--teal-d); transition:transform .06s, box-shadow .2s;
+  }
+  .btn:active{transform:translateY(1px);}
+  .btn.ghost{background:rgba(255,255,255,.18); color:#fff; border:1px solid rgba(255,255,255,.45);}
+  .btn.pink{background:var(--pink); color:#fff;}
+  .btn.big{padding:14px 20px; font-size:1.05rem; border-radius:14px; width:100%;}
+  .btn.danger{background:#fff; color:var(--bad);}
+
+  /* 目的・ゴール（軸） */
+  .axis{
+    margin-top:16px; background:var(--card); border-radius:16px; box-shadow:var(--shadow);
+    border:2px solid var(--teal-l); overflow:hidden;
+  }
+  .axis-head{
+    background:var(--teal-l); padding:10px 16px; font-weight:800; color:var(--teal-d);
+    display:flex; align-items:center; gap:8px; font-size:.95rem;
+  }
+  .axis-body{padding:14px 16px; display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  .axis-body .field label{font-size:.8rem; color:var(--muted); font-weight:700; display:block; margin-bottom:4px;}
+  .axis-body textarea{
+    width:100%; border:1.5px solid var(--line); border-radius:10px; padding:10px; resize:vertical; min-height:54px;
+  }
+  .axis textarea:focus{outline:none; border-color:var(--teal);}
+  .axis-warn{
+    background:#fff7d6; color:#9a6b00; padding:8px 16px; font-size:.85rem; font-weight:700;
+    border-top:1px dashed var(--yellow); display:none;
+  }
+  .axis-warn.show{display:block;}
+
+  /* タブ */
+  .tabs{display:flex; gap:8px; margin:18px 0 14px; flex-wrap:wrap;}
+  .tab{
+    flex:1; min-width:140px; text-align:center; padding:12px 10px; border-radius:12px; cursor:pointer;
+    background:#fff; color:var(--muted); font-weight:800; border:2px solid transparent; box-shadow:var(--shadow);
+  }
+  .tab .n{display:inline-flex; width:22px; height:22px; border-radius:50%; background:var(--teal-l); color:var(--teal-d);
+    align-items:center; justify-content:center; font-size:.8rem; margin-right:6px;}
+  .tab.active{background:var(--teal); color:#fff; border-color:var(--teal-d);}
+  .tab.active .n{background:#fff; color:var(--teal-d);}
+
+  .panel{display:none; animation:fade .2s;}
+  .panel.active{display:block;}
+  @keyframes fade{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;}}
+
+  /* 流れバー */
+  .flow{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; font-size:.78rem;}
+  .flow span{background:#fff; border:1px solid var(--line); border-radius:20px; padding:4px 12px; color:var(--muted); font-weight:700;}
+  .flow span.on{background:var(--teal); color:#fff; border-color:var(--teal);}
+  .flow .arr{border:none; background:none; color:var(--line); padding:4px 0;}
+
+  /* カード */
+  .card{background:var(--card); border-radius:16px; box-shadow:var(--shadow); margin-bottom:16px; overflow:hidden;}
+  .card-head{padding:12px 16px; display:flex; align-items:center; gap:10px; color:#fff; font-weight:800;}
+  .card-head .badge{width:28px; height:28px; border-radius:8px; background:rgba(255,255,255,.25);
+    display:flex; align-items:center; justify-content:center; font-size:1rem;}
+  .card-head small{font-weight:600; opacity:.9; font-size:.78rem;}
+  .h-teal{background:var(--teal);} .h-pink{background:var(--pink);} .h-dark{background:var(--teal-d);}
+  .card-body{padding:14px 16px;}
+  .hint{font-size:.82rem; color:var(--muted); margin:0 0 10px;}
+  .card-body textarea, .card-body input[type=text]{
+    width:100%; border:1.5px solid var(--line); border-radius:10px; padding:10px; resize:vertical;
+  }
+  .card-body textarea:focus, .card-body input:focus{outline:none; border-color:var(--teal);}
+
+  /* チップ（ワンタップ） */
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px;}
+  .chip{
+    border:1.5px solid var(--line); background:#fff; border-radius:22px; padding:7px 14px; cursor:pointer;
+    font-size:.9rem; font-weight:700; color:var(--muted); user-select:none; transition:.12s;
+  }
+  .chip:active{transform:scale(.96);}
+  .chip.on{color:#fff;}
+  .chips.bad .chip.on{background:var(--bad); border-color:var(--bad);}
+  .chips.good .chip.on{background:var(--green); border-color:var(--green);}
+  .row2{display:grid; grid-template-columns:1fr auto; gap:10px; align-items:end;}
+  .mini{font-size:.78rem; color:var(--muted); font-weight:700; margin-bottom:4px; display:block;}
+
+  /* 子レシピ一覧 */
+  .child-list{display:flex; flex-direction:column; gap:8px;}
+  .child-item{display:flex; gap:8px; align-items:center; background:#f6fafa; border:1px solid var(--line);
+    border-radius:10px; padding:8px 10px;}
+  .child-item .name{font-weight:800; color:var(--teal-d);}
+  .child-item .note{color:var(--muted); font-size:.85rem; flex:1;}
+  .child-item button{margin-left:auto;}
+
+  /* 蓄積 */
+  .stat-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px;}
+  .stat{background:#fff; border-radius:14px; box-shadow:var(--shadow); padding:12px; text-align:center;}
+  .stat .num{font-size:1.6rem; font-weight:900; color:var(--teal);}
+  .stat .lab{font-size:.78rem; color:var(--muted); font-weight:700;}
+  .win{background:linear-gradient(135deg,#fff7d6,#fffdf3); border:2px solid var(--yellow); border-radius:16px; padding:14px 16px; margin-bottom:16px;}
+  .win h3{margin:0 0 8px; color:#9a6b00; font-size:1rem; display:flex; gap:6px; align-items:center;}
+  .win .winchips{display:flex; flex-wrap:wrap; gap:8px;}
+  .win .wc{background:#fff; border:1px solid var(--yellow); border-radius:20px; padding:5px 12px; font-weight:800; color:#9a6b00; font-size:.88rem;}
+  .win .wc b{color:var(--pink);}
+  .empty{color:var(--muted); font-size:.9rem; text-align:center; padding:18px;}
+
+  .log{background:#fff; border-radius:14px; box-shadow:var(--shadow); margin-bottom:12px; overflow:hidden;}
+  .log-top{display:flex; align-items:center; gap:10px; padding:10px 14px; background:#f0f7f7; font-size:.85rem;}
+  .log-top .date{font-weight:800; color:var(--teal-d);}
+  .log-top .ver{background:var(--teal); color:#fff; border-radius:20px; padding:2px 10px; font-size:.78rem; font-weight:800;}
+  .log-top .which{color:var(--muted);}
+  .log-body{padding:12px 14px; display:grid; gap:8px;}
+  .log-line{display:flex; gap:8px; align-items:flex-start; font-size:.9rem;}
+  .log-line .ic{flex:0 0 auto; width:22px; height:22px; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:.8rem; color:#fff;}
+  .ic-bad{background:var(--bad);} .ic-good{background:var(--green);} .ic-next{background:var(--teal);}
+  .log-line .tx b{display:block; font-size:.72rem; color:var(--muted);}
+  .log .del{margin:0 14px 12px auto; display:block;}
+
+  .foot{text-align:center; color:var(--muted); font-size:.78rem; margin-top:24px;}
+  .toast{
+    position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(20px);
+    background:var(--teal-d); color:#fff; padding:12px 22px; border-radius:30px; font-weight:800; box-shadow:var(--shadow);
+    opacity:0; pointer-events:none; transition:.3s;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  @media(max-width:560px){
+    .axis-body{grid-template-columns:1fr;}
+    .stat-grid{grid-template-columns:1fr 1fr;}
+    header.app h1{font-size:1.1rem;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ヘッダー -->
+  <header class="app">
+    <div>
+      <h1>🟢 画像レシピ セルフチェック</h1>
+      <div class="sub">残すほど再現できて、成果が安定していくよ</div>
+    </div>
+    <div class="proj-bar">
+      <select class="proj" id="projSelect" onchange="switchProject(this.value)"></select>
+      <button class="btn ghost" onclick="newProject()">＋ 案件を追加</button>
+    </div>
+  </header>
+
+  <!-- 0. 目的とゴール（軸） -->
+  <section class="axis">
+    <div class="axis-head">🎯 この画像で達成したいこと（最初にここを決める＝手戻り防止の軸）</div>
+    <div class="axis-body">
+      <div class="field">
+        <label>目的（何のために作る？）</label>
+        <textarea id="purpose" placeholder="例）Brainの表紙サムネを作る。初心者にAI活用を伝える媒体。" oninput="saveAxis()"></textarea>
+      </div>
+      <div class="field">
+        <label>ゴール（どうなったら成功？）</label>
+        <textarea id="goal" placeholder="例）保存率を上げる／「わかりやすい」と言われる状態にする。" oninput="saveAxis()"></textarea>
+      </div>
+    </div>
+    <div class="axis-warn" id="axisWarn">⚠️ まず「目的」と「ゴール」を埋めてね。ここがブレると作り直し（手戻り）が増えちゃうよ。</div>
+  </section>
+
+  <!-- タブ -->
+  <div class="tabs">
+    <div class="tab active" data-tab="recipe" onclick="switchTab('recipe')"><span class="n">①②</span>レシピ帳</div>
+    <div class="tab" data-tab="check" onclick="switchTab('check')"><span class="n">③④⑤</span>今回のセルフチェック</div>
+    <div class="tab" data-tab="grow" onclick="switchTab('grow')"><span class="n">📈</span>蓄積・成長</div>
+  </div>
+
+  <!-- ① ② レシピ帳 -->
+  <section class="panel active" id="panel-recipe">
+    <div class="flow"><span class="on">① 親レシピ</span><span class="arr">→</span><span class="on">② 子レシピ</span><span class="arr">→</span><span>③ 失敗</span><span class="arr">→</span><span>④ 反応</span><span class="arr">→</span><span>⑤ 改善</span></div>
+
+    <div class="card">
+      <div class="card-head h-teal"><span class="badge">①</span><div>親レシピ <small>／ 基本の型を決めて、再現できる状態で保存</small></div></div>
+      <div class="card-body">
+        <p class="hint">目的・ターゲット・媒体・構図・配色・プロンプトなど「これさえ見れば同じ画が作れる」基本の型を書いておこう。</p>
+        <textarea id="parent" rows="6" placeholder="例）&#10;・媒体：Brain表紙（16:9）&#10;・構図：左にコピー、右にキャラ&#10;・配色：ティール×ピンク、背景クリーム&#10;・プロンプト：flat illustration, teal & pink, clean ..." oninput="saveParent()"></textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head h-teal"><span class="badge">②</span><div>子レシピ <small>／ 用途やテーマに合わせてバリエーションを展開</small></div></div>
+      <div class="card-body">
+        <p class="hint">親レシピから派生させたパターンを登録。あとで「どの子レシピを使ったか」を記録に紐づけられるよ。</p>
+        <div class="child-list" id="childList"></div>
+        <div class="row2" style="margin-top:10px;">
+          <div>
+            <span class="mini">名前（例：教育系／初心者向け）</span>
+            <input type="text" id="childName" placeholder="子レシピの名前">
+          </div>
+          <button class="btn pink" onclick="addChild()">＋ 追加</button>
+        </div>
+        <div style="margin-top:8px;">
+          <span class="mini">メモ（使いどころ・違い）</span>
+          <input type="text" id="childNote" placeholder="例）文字大きめ・やさしい配色。初心者向け記事に使う">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ③ ④ ⑤ セルフチェック -->
+  <section class="panel" id="panel-check">
+    <div class="flow"><span>① 親</span><span class="arr">→</span><span>② 子</span><span class="arr">→</span><span class="on">③ 失敗メモ</span><span class="arr">→</span><span class="on">④ 反応メモ</span><span class="arr">→</span><span class="on">⑤ 次の改善</span></div>
+
+    <div class="card">
+      <div class="card-head h-dark"><span class="badge">🧩</span><div>今回使った子レシピ <small>／ どれを試した？</small></div></div>
+      <div class="card-body">
+        <select id="usedChild" class="proj" style="width:100%; border:1.5px solid var(--line);"></select>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head h-pink"><span class="badge">③</span><div>失敗メモ <small>／ うまくいかなかった理由を一言で残す（タップでOK）</small></div></div>
+      <div class="card-body">
+        <p class="hint">当てはまるものをタップ。一言メモは任意。あとで「失敗→対策」として貯まるよ。</p>
+        <div class="chips bad" id="failChips"></div>
+        <input type="text" id="failNote" placeholder="一言メモ（任意）例：右上のロゴが目立ちすぎた">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head h-dark" style="background:var(--green)"><span class="badge">④</span><div>反応メモ <small>／ 実際の反応を記録して成功パターンを見つける</small></div></div>
+      <div class="card-body">
+        <p class="hint">良かった反応をタップ。数字（保存数・クリック率など）があればメモに。</p>
+        <div class="chips good" id="reactChips"></div>
+        <input type="text" id="reactNote" placeholder="一言メモ（任意）例：保存30件・コメント『見やすい』">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head h-teal"><span class="badge">⑤</span><div>次の改善 <small>／ 次に試すことを1つだけ決めて、小さくアップデート</small></div></div>
+      <div class="card-body">
+        <p class="hint">あれこれ変えず「次に試す仮説を1つ」。これが手戻りを減らすコツ。</p>
+        <div class="row2">
+          <div>
+            <span class="mini">次に試すこと（仮説1つ）</span>
+            <input type="text" id="improveNote" placeholder="例：コピーを短くしてみる">
+          </div>
+          <div>
+            <span class="mini">バージョン</span>
+            <input type="text" id="version" style="width:90px;" placeholder="v1.1">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn pink big" onclick="saveCycle()">💾 この1回を記録して、勝ちパターンを育てる</button>
+  </section>
+
+  <!-- 蓄積・成長 -->
+  <section class="panel" id="panel-grow">
+    <div class="flow"><span>残す</span><span class="arr">→</span><span class="on">探しやすい</span><span class="arr">→</span><span class="on">再現できる</span><span class="arr">→</span><span class="on">資産になる</span><span class="arr">→</span><span class="on">成果が安定</span></div>
+
+    <div class="stat-grid">
+      <div class="stat"><div class="num" id="statCount">0</div><div class="lab">記録した回数</div></div>
+      <div class="stat"><div class="num" id="statChild">0</div><div class="lab">子レシピ数</div></div>
+      <div class="stat"><div class="num" id="statWin">0</div><div class="lab">勝ち反応の数</div></div>
+    </div>
+
+    <div class="win">
+      <h3>⭐ あなたの「勝ちパターン」（反応が良かった順）</h3>
+      <div class="winchips" id="winChips"><span class="wc">まだ記録がないよ</span></div>
+    </div>
+
+    <h3 style="color:var(--teal-d); margin:18px 0 8px;">📒 記録の履歴（新しい順）＝失敗→対策の蓄積</h3>
+    <div id="logList"></div>
+  </section>
+
+  <div class="foot">データはこのブラウザの中だけに保存されます（外には送られません）。<br>同じブラウザで開けばいつでも続きから使えます。</div>
+</div>
+
+<div class="toast" id="toast">保存したよ！</div>
+
+<script>
+/* ====== データ層（localStorage） ====== */
+const KEY = "image-recipe-selfcheck-v1";
+const FAIL_PRESETS = ["文字が多すぎた","色が弱い","伝えたいことがぼやけた","構図がごちゃついた","ターゲットとズレた","写真と合わない","余白がない","ロゴが目立ちすぎ"];
+const REACT_PRESETS = ["保存率が高い","『わかりやすい』の声","クリックされた","コメントが付いた","シェアされた","目を引いた"];
+
+let store = load();
+function load(){
+  try{ const d = JSON.parse(localStorage.getItem(KEY)); if(d && d.projects) return d; }catch(e){}
+  const id = uid();
+  return { current:id, projects:[ blankProject(id,"案件A") ] };
+}
+function blankProject(id,name){ return { id, name, purpose:"", goal:"", parent:"", children:[], cycles:[] }; }
+function save(){ localStorage.setItem(KEY, JSON.stringify(store)); }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function cur(){ return store.projects.find(p=>p.id===store.current) || store.projects[0]; }
+
+/* ====== 案件 ====== */
+function renderProjects(){
+  const sel = document.getElementById("projSelect");
+  sel.innerHTML = store.projects.map(p=>`<option value="${p.id}" ${p.id===store.current?"selected":""}>${esc(p.name)}</option>`).join("");
+}
+function switchProject(id){ store.current=id; save(); renderAll(); }
+function newProject(){
+  const name = prompt("新しい案件の名前は？", "案件"+String.fromCharCode(65+store.projects.length));
+  if(!name) return;
+  const id = uid(); store.projects.push(blankProject(id,name)); store.current=id; save(); renderAll();
+}
+
+/* ====== 目的・ゴール（軸） ====== */
+function saveAxis(){
+  const p = cur();
+  p.purpose = document.getElementById("purpose").value;
+  p.goal = document.getElementById("goal").value;
+  save(); checkAxis();
+}
+function checkAxis(){
+  const p = cur();
+  const ok = p.purpose.trim() && p.goal.trim();
+  document.getElementById("axisWarn").classList.toggle("show", !ok);
+  return ok;
+}
+
+/* ====== 親レシピ ====== */
+function saveParent(){ cur().parent = document.getElementById("parent").value; save(); }
+
+/* ====== 子レシピ ====== */
+function addChild(){
+  const name = document.getElementById("childName").value.trim();
+  const note = document.getElementById("childNote").value.trim();
+  if(!name){ toast("子レシピの名前を入れてね"); return; }
+  cur().children.push({ id:uid(), name, note });
+  document.getElementById("childName").value=""; document.getElementById("childNote").value="";
+  save(); renderChildren(); renderUsedChild(); renderStats();
+}
+function delChild(id){
+  if(!confirm("この子レシピを消す？")) return;
+  const p = cur(); p.children = p.children.filter(c=>c.id!==id); save(); renderChildren(); renderUsedChild(); renderStats();
+}
+function renderChildren(){
+  const list = document.getElementById("childList");
+  const p = cur();
+  if(!p.children.length){ list.innerHTML = `<div class="empty">まだ子レシピがないよ。下から追加してね。</div>`; return; }
+  list.innerHTML = p.children.map(c=>`
+    <div class="child-item">
+      <span class="name">${esc(c.name)}</span>
+      <span class="note">${esc(c.note||"")}</span>
+      <button class="btn danger" onclick="delChild('${c.id}')">削除</button>
+    </div>`).join("");
+}
+function renderUsedChild(){
+  const sel = document.getElementById("usedChild");
+  const p = cur();
+  sel.innerHTML = `<option value="">（子レシピを選ぶ・任意）</option>` +
+    p.children.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
+}
+
+/* ====== チップ ====== */
+function renderChips(){
+  document.getElementById("failChips").innerHTML =
+    FAIL_PRESETS.map(t=>`<span class="chip" data-on="0" onclick="toggleChip(this)">${t}</span>`).join("");
+  document.getElementById("reactChips").innerHTML =
+    REACT_PRESETS.map(t=>`<span class="chip" data-on="0" onclick="toggleChip(this)">${t}</span>`).join("");
+}
+function toggleChip(el){ const on = el.dataset.on==="1"; el.dataset.on = on?"0":"1"; el.classList.toggle("on",!on); }
+function selectedChips(id){ return [...document.querySelectorAll(`#${id} .chip.on`)].map(c=>c.textContent); }
+function clearChips(){ document.querySelectorAll(".chip.on").forEach(c=>{c.classList.remove("on"); c.dataset.on="0";}); }
+
+/* ====== サイクル記録 ====== */
+function saveCycle(){
+  if(!checkAxis()){ switchTabSilent(); document.getElementById("purpose").focus(); toast("先に目的・ゴールを埋めてね"); window.scrollTo({top:0,behavior:"smooth"}); return; }
+  const fail = selectedChips("failChips");
+  const react = selectedChips("reactChips");
+  const failNote = document.getElementById("failNote").value.trim();
+  const reactNote = document.getElementById("reactNote").value.trim();
+  const improve = document.getElementById("improveNote").value.trim();
+  const ver = document.getElementById("version").value.trim();
+  const childId = document.getElementById("usedChild").value;
+  if(!fail.length && !react.length && !failNote && !reactNote && !improve){ toast("どれか1つは記録してね"); return; }
+
+  cur().cycles.push({
+    id:uid(), date:new Date().toISOString(), childId,
+    fail, failNote, react, reactNote, improve, ver
+  });
+  save();
+  // 入力リセット
+  clearChips();
+  ["failNote","reactNote","improveNote","version"].forEach(i=>document.getElementById(i).value="");
+  document.getElementById("usedChild").value="";
+  renderGrow();
+  toast("記録したよ！蓄積タブで成長が見えるよ📈");
+  switchTab("grow");
+}
+function delCycle(id){
+  if(!confirm("この記録を消す？")) return;
+  const p = cur(); p.cycles = p.cycles.filter(c=>c.id!==id); save(); renderGrow();
+}
+
+/* ====== 蓄積・成長 ====== */
+function renderGrow(){ renderStats(); renderWin(); renderLogs(); }
+function renderStats(){
+  const p = cur();
+  document.getElementById("statCount").textContent = p.cycles.length;
+  document.getElementById("statChild").textContent = p.children.length;
+  const winN = p.cycles.reduce((s,c)=>s+(c.react?c.react.length:0),0);
+  document.getElementById("statWin").textContent = winN;
+}
+function renderWin(){
+  const p = cur(); const count = {};
+  p.cycles.forEach(c=> (c.react||[]).forEach(r=> count[r]=(count[r]||0)+1));
+  const arr = Object.entries(count).sort((a,b)=>b[1]-a[1]);
+  const box = document.getElementById("winChips");
+  if(!arr.length){ box.innerHTML = `<span class="wc">まだ記録がないよ。④反応メモを残すと、ここに勝ちパターンが並ぶよ</span>`; return; }
+  box.innerHTML = arr.map(([t,n])=>`<span class="wc">${esc(t)} <b>×${n}</b></span>`).join("");
+}
+function childName(id){ const c = cur().children.find(x=>x.id===id); return c?c.name:""; }
+function renderLogs(){
+  const p = cur(); const box = document.getElementById("logList");
+  if(!p.cycles.length){ box.innerHTML = `<div class="empty">まだ記録がないよ。「今回のセルフチェック」から残してみよう。</div>`; return; }
+  box.innerHTML = [...p.cycles].reverse().map(c=>{
+    const d = new Date(c.date); const ds = `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+    const cn = childName(c.childId);
+    const fail = [...(c.fail||[]), c.failNote].filter(Boolean).join(" / ");
+    const react = [...(c.react||[]), c.reactNote].filter(Boolean).join(" / ");
+    let lines = "";
+    if(fail) lines += `<div class="log-line"><span class="ic ic-bad">✕</span><span class="tx"><b>失敗</b>${esc(fail)}</span></div>`;
+    if(react) lines += `<div class="log-line"><span class="ic ic-good">♥</span><span class="tx"><b>反応</b>${esc(react)}</span></div>`;
+    if(c.improve) lines += `<div class="log-line"><span class="ic ic-next">→</span><span class="tx"><b>次の改善（対策）</b>${esc(c.improve)}</span></div>`;
+    return `<div class="log">
+      <div class="log-top"><span class="date">${ds}</span>${c.ver?`<span class="ver">${esc(c.ver)}</span>`:""}${cn?`<span class="which">🧩 ${esc(cn)}</span>`:""}</div>
+      <div class="log-body">${lines||'<div class="empty">（内容なし）</div>'}</div>
+      <button class="btn danger del" onclick="delCycle('${c.id}')">この記録を削除</button>
+    </div>`;
+  }).join("");
+}
+
+/* ====== タブ ====== */
+function switchTab(name){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active", t.dataset.tab===name));
+  document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+  document.getElementById("panel-"+name).classList.add("active");
+  if(name==="grow") renderGrow();
+}
+function switchTabSilent(){ /* 軸未入力時に上部へ誘導するだけ */ }
+
+/* ====== 共通描画 ====== */
+function renderAll(){
+  renderProjects();
+  const p = cur();
+  document.getElementById("purpose").value = p.purpose;
+  document.getElementById("goal").value = p.goal;
+  document.getElementById("parent").value = p.parent;
+  renderChildren(); renderUsedChild(); renderChips(); renderGrow(); checkAxis();
+}
+
+/* ====== ユーティリティ ====== */
+function esc(s){ return (s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m])); }
+let toastTimer;
+function toast(msg){
+  const t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove("show"), 2200);
+}
+
+/* 起動 */
+renderAll();
+</script>
+</body>
+</html>
