@@ -112,5 +112,38 @@ window.COLLECTION = [
     image_url: "",
     tags: "#アプリ,#投資,#チェックリスト",
     created_at: "2026-07-08"
+  },
+  {
+    id: 14,
+    type: "webapp",
+    title: "汎用マンガネーム生成システム",
+    description: "テーマや読者設定から、汎用的なマンガネームの構成をブラウザで組み立てるツール",
+    content: "",
+    url: "apps/name-generator/index.html",
+    image_url: "",
+    tags: "#アプリ,#ネーム,#マンガ制作",
+    created_at: "2026-07-08"
+  },
+  {
+    id: 15,
+    type: "webapp",
+    title: "ギャグ漫画ネーム発射台",
+    description: "入力した文章から、ギャグマンガ向けのネーム作成プロンプトを作る発射台",
+    content: "",
+    url: "apps/gag-name-launcher/index.html",
+    image_url: "",
+    tags: "#アプリ,#ネーム,#ギャグ",
+    created_at: "2026-07-08"
+  },
+  {
+    id: 16,
+    type: "webapp",
+    title: "AIマンガ制作統合ツール",
+    description: "ページ別プロンプト・脚本・ボード・リライトなど、マンガ制作の工程をひとつにまとめた統合ツール",
+    content: "",
+    url: "apps/manga-studio-tools/index.html",
+    image_url: "",
+    tags: "#アプリ,#マンガ制作",
+    created_at: "2026-07-08"
   }
 ];

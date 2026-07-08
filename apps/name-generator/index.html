@@ -1,0 +1,2321 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>汎用マンガネーム生成システム</title>
+<style>
+  :root{
+    --bg:#f5f7f8;
+    --surface:#ffffff;
+    --ink:#18242f;
+    --sub:#60717f;
+    --line:#d8e0e6;
+    --deep:#14212c;
+    --deep2:#243845;
+    --accent:#1f8a70;
+    --accent2:#d94d73;
+    --warn:#b8791b;
+    --soft:#eef5f2;
+    --soft2:#f7edf1;
+    --soft3:#fff8e8;
+    --shadow:0 12px 28px rgba(24,36,47,.08);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",Meiryo,sans-serif;
+    line-height:1.55;
+  }
+  button,input,select,textarea{font:inherit}
+  button{cursor:pointer}
+  .app{
+    min-height:100vh;
+    display:grid;
+    grid-template-rows:auto 1fr;
+  }
+  header{
+    background:var(--deep);
+    color:#fff;
+    border-bottom:4px solid var(--accent);
+    padding:18px clamp(16px,3vw,34px);
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:18px;
+    align-items:center;
+  }
+  h1{
+    margin:0;
+    font-size:clamp(20px,2.4vw,30px);
+    line-height:1.2;
+    letter-spacing:0;
+  }
+  .lead{
+    margin:5px 0 0;
+    color:#bfd0db;
+    font-size:13px;
+    font-weight:700;
+  }
+  .version-badge{
+    display:inline-flex;
+    align-items:center;
+    margin-top:9px;
+    border:1px solid rgba(255,255,255,.26);
+    border-radius:7px;
+    padding:4px 8px;
+    color:#fff;
+    background:rgba(31,138,112,.34);
+    font-size:12px;
+    font-weight:900;
+  }
+  .header-actions{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    justify-content:flex-end;
+    flex-wrap:wrap;
+  }
+  .shell{
+    width:min(1480px,100%);
+    margin:0 auto;
+    padding:22px clamp(14px,2.5vw,30px) 34px;
+    display:grid;
+    grid-template-columns:minmax(320px,430px) minmax(0,1fr);
+    gap:22px;
+    align-items:start;
+  }
+  .sidebar{
+    position:sticky;
+    top:18px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:8px;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  .sidebar-head{
+    padding:16px 18px;
+    background:#fbfcfd;
+    border-bottom:1px solid var(--line);
+  }
+  .sidebar-title{
+    margin:0;
+    font-size:16px;
+    line-height:1.35;
+  }
+  .form{
+    padding:18px;
+    display:grid;
+    gap:16px;
+  }
+  .field{
+    display:grid;
+    gap:7px;
+  }
+  .field.inline{
+    grid-template-columns:1fr 116px;
+    align-items:end;
+  }
+  label{
+    font-size:12px;
+    font-weight:900;
+    color:#2f4554;
+  }
+  .hint{
+    margin:0;
+    color:var(--sub);
+    font-size:12px;
+  }
+  textarea,input[type="text"],input[type="number"],select{
+    width:100%;
+    border:1px solid #cfd9df;
+    background:#fff;
+    color:var(--ink);
+    border-radius:7px;
+    padding:10px 11px;
+    outline:none;
+  }
+  textarea{resize:vertical;min-height:98px}
+  textarea:focus,input:focus,select:focus{
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(31,138,112,.13);
+  }
+  .segmented{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    border:1px solid #cfd9df;
+    border-radius:7px;
+    overflow:hidden;
+    background:#fff;
+  }
+  .segmented button{
+    border:0;
+    border-right:1px solid #cfd9df;
+    background:#fff;
+    color:#405768;
+    min-height:38px;
+    padding:8px;
+    font-size:12px;
+    font-weight:900;
+  }
+  .segmented button:last-child{border-right:0}
+  .segmented button.active{
+    background:var(--deep2);
+    color:#fff;
+  }
+  .checks{
+    display:grid;
+    gap:8px;
+  }
+  .check{
+    display:grid;
+    grid-template-columns:18px 1fr;
+    gap:8px;
+    align-items:start;
+    font-size:13px;
+    color:#324856;
+  }
+  .check input{margin-top:2px;accent-color:var(--accent)}
+  .range-wrap{
+    display:grid;
+    grid-template-columns:1fr 42px;
+    gap:10px;
+    align-items:center;
+  }
+  input[type="range"]{width:100%;accent-color:var(--accent)}
+  .range-value{
+    border:1px solid #cfd9df;
+    border-radius:7px;
+    text-align:center;
+    padding:6px 0;
+    font-size:12px;
+    font-weight:900;
+    background:#fff;
+  }
+  .actions{
+    display:grid;
+    grid-template-columns:1fr 42px 42px;
+    gap:10px;
+    padding-top:2px;
+  }
+  .btn{
+    border:1px solid transparent;
+    border-radius:7px;
+    min-height:42px;
+    padding:9px 12px;
+    font-weight:900;
+    color:#fff;
+    background:var(--deep2);
+  }
+  .btn.primary{background:var(--accent)}
+  .btn.warn{background:var(--warn)}
+  .btn.light{
+    background:#fff;
+    color:var(--deep2);
+    border-color:#cfd9df;
+  }
+  .btn:hover{filter:brightness(.96)}
+  .main{
+    display:grid;
+    gap:18px;
+  }
+  .toolbar{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:space-between;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:12px;
+  }
+  .tabs{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .tab{
+    border:1px solid #cfd9df;
+    background:#fff;
+    color:#344b5a;
+    min-height:36px;
+    padding:7px 11px;
+    border-radius:7px;
+    font-size:13px;
+    font-weight:900;
+  }
+  .tab.active{
+    color:#fff;
+    background:var(--deep2);
+    border-color:var(--deep2);
+  }
+  .tool-actions{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .output{
+    display:none;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:8px;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  .output.active{display:block}
+  .output-head{
+    display:flex;
+    gap:14px;
+    justify-content:space-between;
+    align-items:center;
+    padding:15px 18px;
+    border-bottom:1px solid var(--line);
+    background:#fbfcfd;
+  }
+  .output-head h2{
+    margin:0;
+    font-size:17px;
+    line-height:1.35;
+  }
+  .output-body{padding:18px}
+  .empty{
+    min-height:520px;
+    display:grid;
+    place-items:center;
+    text-align:center;
+    color:var(--sub);
+    border:1px dashed #cfd9df;
+    border-radius:8px;
+    background:#fbfcfd;
+    padding:24px;
+  }
+  .result-grid{
+    display:grid;
+    grid-template-columns:repeat(12,1fr);
+    gap:14px;
+  }
+  .summary-box{
+    grid-column:span 4;
+    background:var(--soft);
+    border:1px solid #d4e8df;
+    border-radius:8px;
+    padding:14px;
+  }
+  .summary-box:nth-child(2){background:var(--soft2);border-color:#ead1db}
+  .summary-box:nth-child(3){background:var(--soft3);border-color:#eadfbf}
+  .summary-box strong{
+    display:block;
+    margin-bottom:6px;
+    font-size:12px;
+    color:#344b5a;
+  }
+  .summary-box p{margin:0;font-size:14px}
+  .page-list{
+    display:grid;
+    gap:14px;
+  }
+  .page-row{
+    border:1px solid var(--line);
+    border-radius:8px;
+    overflow:hidden;
+    background:#fff;
+  }
+  .page-row-head{
+    display:grid;
+    grid-template-columns:auto 1fr auto;
+    gap:12px;
+    align-items:center;
+    padding:12px 14px;
+    background:#f8fafb;
+    border-bottom:1px solid var(--line);
+  }
+  .page-no{
+    width:32px;
+    height:32px;
+    border-radius:7px;
+    display:grid;
+    place-items:center;
+    background:var(--deep2);
+    color:#fff;
+    font-weight:900;
+  }
+  .page-role{font-weight:900}
+  .page-emotion{
+    color:var(--sub);
+    font-size:12px;
+    font-weight:800;
+  }
+  .badge{
+    display:inline-flex;
+    align-items:center;
+    border-radius:999px;
+    padding:4px 9px;
+    font-size:11px;
+    font-weight:900;
+    color:#fff;
+    background:var(--accent2);
+    white-space:nowrap;
+  }
+  .page-content{
+    display:grid;
+    grid-template-columns:220px 1fr;
+    gap:14px;
+    padding:14px;
+  }
+  .thumb{
+    aspect-ratio:9/16;
+    width:100%;
+    max-width:220px;
+    border:3px solid #171c22;
+    background:#fff;
+    display:grid;
+    gap:4px;
+    padding:5px;
+  }
+  .layout-a{grid-template-rows:1.1fr .8fr 1.3fr}
+  .layout-b{grid-template-rows:.75fr .75fr .75fr 1.5fr}
+  .layout-c{grid-template-rows:1.45fr .72fr 1.1fr .9fr}
+  .layout-d{grid-template-rows:.8fr .8fr .8fr .8fr 1.2fr}
+  .thumb-row{display:grid;gap:4px}
+  .cols-2{grid-template-columns:1fr 1fr}
+  .cols-3{grid-template-columns:1fr 1fr 1fr}
+  .cols-4{grid-template-columns:1fr 1fr 1fr 1fr}
+  .mini-panel{
+    border:2px solid #171c22;
+    background:linear-gradient(135deg,#f7f7f7,#e9eef2);
+    display:grid;
+    place-items:center;
+    color:#253746;
+    font-size:11px;
+    font-weight:900;
+    text-align:center;
+    padding:4px;
+    min-height:34px;
+  }
+  .mini-panel.key{
+    background:linear-gradient(135deg,#fff,#f7e5ec);
+    color:#9b3156;
+  }
+  .mini-panel.dark{
+    background:#17202a;
+    color:#fff;
+  }
+  .panel-list{
+    display:grid;
+    gap:8px;
+  }
+  .panel-item{
+    display:grid;
+    grid-template-columns:72px 1fr;
+    gap:10px;
+    align-items:start;
+    padding:9px 0;
+    border-bottom:1px solid #eef2f4;
+  }
+  .panel-item:last-child{border-bottom:0}
+  .panel-tag{
+    font-size:12px;
+    color:#fff;
+    background:#526b7b;
+    border-radius:7px;
+    text-align:center;
+    padding:5px;
+    font-weight:900;
+  }
+  .panel-text{
+    font-size:13px;
+  }
+  .panel-text b{color:#1d3344}
+  pre{
+    margin:0;
+    white-space:pre-wrap;
+    word-break:break-word;
+    background:#111b24;
+    color:#eef7f4;
+    border-radius:8px;
+    padding:16px;
+    line-height:1.65;
+    font-size:13px;
+    max-height:68vh;
+    overflow:auto;
+  }
+  .checklist{
+    display:grid;
+    gap:10px;
+  }
+  .check-row{
+    display:grid;
+    grid-template-columns:26px 1fr;
+    gap:10px;
+    align-items:start;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:11px;
+    background:#fff;
+  }
+  .mark{
+    width:26px;
+    height:26px;
+    display:grid;
+    place-items:center;
+    border-radius:50%;
+    color:#fff;
+    background:var(--accent);
+    font-weight:900;
+  }
+  .toast{
+    position:fixed;
+    right:18px;
+    bottom:18px;
+    z-index:30;
+    background:#17202a;
+    color:#fff;
+    border-radius:8px;
+    padding:11px 14px;
+    box-shadow:0 12px 26px rgba(0,0,0,.24);
+    opacity:0;
+    transform:translateY(10px);
+    pointer-events:none;
+    transition:.18s ease;
+    font-size:13px;
+    font-weight:900;
+  }
+  .toast.show{
+    opacity:1;
+    transform:translateY(0);
+  }
+  @media(max-width:1040px){
+    .shell{grid-template-columns:1fr}
+    .sidebar{position:static}
+    .summary-box{grid-column:span 12}
+  }
+  @media(max-width:720px){
+    header{grid-template-columns:1fr}
+    .header-actions{justify-content:flex-start}
+    .field.inline{grid-template-columns:1fr}
+    .actions{grid-template-columns:1fr 1fr 1fr}
+    .page-row-head{grid-template-columns:auto 1fr}
+    .page-row-head .badge{grid-column:1/-1;justify-self:start}
+    .page-content{grid-template-columns:1fr}
+    .thumb{max-width:240px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div>
+      <h1>汎用マンガネーム生成システム</h1>
+      <p class="lead">悩み、商品紹介、体験談、教育、物語設定を、日本のマンガ文法に沿ったテキストネームへ変換します。</p>
+      <div class="version-badge">王道ネーム文法 v3：手元・引き・横顔・具体物・決めゴマで原稿化</div>
+    </div>
+    <div class="header-actions">
+      <button class="btn light" id="sampleBtn" type="button" title="サンプル入力">例</button>
+      <button class="btn light" id="clearBtn" type="button" title="新しいテーマにする">新規</button>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="sidebar-head">
+        <p class="sidebar-title">入力</p>
+        <p class="hint">まず素材を入れて、読者とテイストを決めます。</p>
+      </div>
+      <form class="form" id="generatorForm">
+        <div class="field">
+          <label for="sourceText">原作メモ・テーマ</label>
+          <textarea id="sourceText" placeholder="例：朝の散歩を始めたいけど、最初の一歩が重い。小さく始めれば気持ちが変わることを伝えたい。"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="characterText">キャラクター設定</label>
+          <textarea id="characterText" placeholder="例：主人公は慎重で考えすぎる人。相棒はやさしく背中を押す案内役。読者目線で受け止める。"></textarea>
+          <p class="hint">画像がある場合は、あとで画像生成時に参照画像として添付します。</p>
+        </div>
+
+        <div class="field">
+          <label>目的</label>
+          <div class="segmented" id="purposeSeg">
+            <button type="button" data-value="sns" class="active">SNS</button>
+            <button type="button" data-value="article">記事</button>
+            <button type="button" data-value="lp">LP</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="taste">テイスト</label>
+          <select id="taste">
+            <option value="female">女性向け漫画：共感、柔らかい表情、生活感</option>
+            <option value="seinen">青年漫画：緊張、陰影、現実の圧</option>
+            <option value="dark">ダークリアル：沈黙、黒ベタ、孤独</option>
+            <option value="softpop">ソフトポップ：やさしい色、親しみ、軽い感情変化</option>
+            <option value="pop">ポップ：勢い、強い擬音、視覚的な楽しさ</option>
+            <option value="yurufuwa">ゆるふわ：かわいさ、小さな失敗、安心感</option>
+            <option value="gag">ギャグ漫画：反復、落差、急なズラし</option>
+            <option value="custom">カスタム：入力文の空気を優先</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="structure">展開の型</label>
+          <select id="structure">
+            <option value="universal">悩み → 違和感 → 視点転換 → 小さな行動 → 感情解放</option>
+            <option value="conflict">対立 → 比較 → 本音 → 和解</option>
+            <option value="challenge">停滞 → 比喩行動 → 入水/一歩 → 継続</option>
+            <option value="product">過去の憧れ → 今の停滞 → 道具との出会い → 使う側へ</option>
+            <option value="lesson">誤解 → 実験 → 失敗の分解 → 原則化</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="directionMode">演出モード</label>
+          <select id="directionMode">
+            <option value="stable">画像生成安定：王道ネーム文法</option>
+            <option value="auto">自動：テーマごとに構図とテンポを変える</option>
+            <option value="cinematic">映画的：余白、引き、光と沈黙を強める</option>
+            <option value="emotion">感情重視：手元、目線、間で内面を見せる</option>
+            <option value="speed">速度重視：小コマ連続と斜め分割で走らせる</option>
+            <option value="gaggap">ギャグ落差：反復、急な引き、ズラしを強める</option>
+            <option value="quiet">静寂・余韻：コマ数を絞り、読者に考えさせる</option>
+            <option value="sns">SNS停止：1ページ目から強い決めゴマを置く</option>
+          </select>
+          <p class="hint">固定テンプレを避け、コマ数・画角・決めゴマの作り方を変えます。</p>
+        </div>
+
+        <div class="field inline">
+          <div>
+            <label for="pages">ページ数</label>
+            <input id="pages" type="number" min="1" max="12" value="5">
+          </div>
+          <div>
+            <label for="reading">読み方向</label>
+            <select id="reading">
+              <option value="rtl">右開き</option>
+              <option value="ltr">左開き</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="emotionRange">感情の振れ幅</label>
+          <div class="range-wrap">
+            <input id="emotionRange" type="range" min="1" max="5" value="4">
+            <output id="emotionValue" class="range-value">4</output>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="dialogueRange">セリフ量</label>
+          <div class="range-wrap">
+            <input id="dialogueRange" type="range" min="1" max="5" value="2">
+            <output id="dialogueValue" class="range-value">2</output>
+          </div>
+        </div>
+
+        <div class="checks">
+          <label class="check"><input id="mono" type="checkbox" checked>モノクロ原稿を基本にする</label>
+          <label class="check"><input id="splitText" type="checkbox" checked>絵生成と文字入れを分ける</label>
+          <label class="check"><input id="questionEnd" type="checkbox" checked>最後を断定でなく問いにする</label>
+          <label class="check"><input id="strictZ" type="checkbox" checked>Zラインを明記する</label>
+        </div>
+
+        <div class="actions">
+          <button class="btn primary" type="submit">生成</button>
+          <button class="btn" type="button" id="copyBtn" title="全体をコピー">複</button>
+          <button class="btn warn" type="button" id="downloadBtn" title="Markdownを保存">↓</button>
+        </div>
+      </form>
+    </aside>
+
+    <main class="main">
+      <nav class="toolbar">
+        <div class="tabs" id="tabs">
+          <button class="tab active" data-view="overview" type="button">設計</button>
+          <button class="tab" data-view="pages" type="button">ページ</button>
+          <button class="tab" data-view="name" type="button">ネーム</button>
+          <button class="tab" data-view="prompt" type="button">生成プロンプト</button>
+          <button class="tab" data-view="check" type="button">チェック</button>
+        </div>
+        <div class="tool-actions">
+          <button class="btn light" id="copyCurrentBtn" type="button">表示中をコピー</button>
+        </div>
+      </nav>
+
+      <section class="output active" id="view-overview">
+        <div class="output-head">
+          <h2>編集設計</h2>
+        </div>
+        <div class="output-body" id="overviewBody">
+          <div class="empty">素材を入れて生成すると、カタルシス、発見、読者の入口、ページごとの感情設計が出ます。</div>
+        </div>
+      </section>
+
+      <section class="output" id="view-pages">
+        <div class="output-head">
+          <h2>ページ設計</h2>
+        </div>
+        <div class="output-body" id="pagesBody">
+          <div class="empty">ページごとの役割とコマ割りプレビューがここに出ます。</div>
+        </div>
+      </section>
+
+      <section class="output" id="view-name">
+        <div class="output-head">
+          <h2>テキストネーム</h2>
+        </div>
+        <div class="output-body"><pre id="nameOut">まだ生成されていません。</pre></div>
+      </section>
+
+      <section class="output" id="view-prompt">
+        <div class="output-head">
+          <h2>画像生成プロンプト</h2>
+        </div>
+        <div class="output-body"><pre id="promptOut">まだ生成されていません。</pre></div>
+      </section>
+
+      <section class="output" id="view-check">
+        <div class="output-head">
+          <h2>自己チェック</h2>
+        </div>
+        <div class="output-body" id="checkBody">
+          <div class="empty">生成後に、決めゴマ、説明過多、キャラ維持、視線誘導を確認します。</div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+<div class="toast" id="toast">コピーしました</div>
+
+<script>
+(() => {
+  const $ = (selector) => document.querySelector(selector);
+  const $$ = (selector) => [...document.querySelectorAll(selector)];
+
+  const tasteRules = {
+    female: {
+      label:"女性向け漫画",
+      texture:"柔らかい線、生活光、花や窓辺、横顔、手元のアップ",
+      camera:"引きの室内、横顔、手元、目元、最後にやわらかい笑顔",
+      text:"内心を短く置き、読者が自分の生活に重ねられる余白を残す"
+    },
+    seinen: {
+      label:"青年漫画",
+      texture:"強い黒ベタ、斜めコマ、現実的な部屋、硬い表情、陰影",
+      camera:"画面越しの発光、背中の引き、横顔の沈黙、正面の圧",
+      text:"セリフは短く、言い切りと沈黙で緊張を作る"
+    },
+    dark: {
+      label:"ダークリアル",
+      texture:"余白、黒い空間、雨、孤独な引き、無表情",
+      camera:"極小の人物、黒背景の大ゴマ、手の震え、目だけの寄り",
+      text:"言葉を削り、問いと沈黙で読者に考えさせる"
+    },
+    softpop: {
+      label:"ソフトポップ",
+      texture:"淡い色、丸い小物、日常の空気、安心感のある間",
+      camera:"正面より少し斜め、手元、小物、軽いリアクション",
+      text:"やさしい口調で、行動のハードルを低くする"
+    },
+    pop: {
+      label:"ポップ",
+      texture:"明るい背景、強い視覚記号、動き、スピード感",
+      camera:"大きな登場コマ、斜めの動き、勢いのある引き",
+      text:"短い掛け声と大きなリアクションでスクロールを止める"
+    },
+    yurufuwa: {
+      label:"ゆるふわ",
+      texture:"丸い表情、かわいい失敗、小さな反省、安心感のある余白",
+      camera:"机、メモ、困り顔、にっこりの決めゴマ",
+      text:"失敗を責めず、少し笑って前へ進む言葉にする"
+    },
+    gag: {
+      label:"ギャグ漫画",
+      texture:"反復、急な落差、顔芸、極端な状況転換",
+      camera:"同じ構図の繰り返し、急な引き、最後のズラし",
+      text:"前フリを短く、オチは一言で落とす"
+    },
+    custom: {
+      label:"カスタム",
+      texture:"入力文の感情に合わせ、必要な画風だけを選ぶ",
+      camera:"悩みの核が伝わる被写体を優先する",
+      text:"説明より感情の変化を優先する"
+    }
+  };
+
+  const structureBeats = {
+    universal:["Low：できない痛み","違和感：試しても進まない","転換：小さく分ける発見","小さな行動：一手だけ動く","解放：次を選べる"],
+    conflict:["対立：相手の言葉が刺さる","比較：周囲との差が見える","本音：実は聞けなかった","橋渡し：教える側に回る","余韻：関係が少し変わる"],
+    challenge:["停滞：準備だけが増える","比喩：陸で泳ぎ方を学ぶ","接触：水に触れる","入水：体で覚え始める","継続：下手でも進む"],
+    product:["過去：憧れていた自分","現在：止まっている自分","登場：案内役や方法と出会う","共同：一緒に試す","選択：自分で選べる"],
+    lesson:["誤解：うまくいかない原因を間違える","実験：試して失敗する","分解：何が足りないか見える","原則：次の手順として言語化する","応用：別の題材にも使える"]
+  };
+
+  const tasteStoryProfiles = {
+    female: {
+      beats:["共感：小さな違和感を抱える","内省：言葉にできない本音がにじむ","支え：やさしい一言で視点が変わる","行動：怖いまま小さく試す","余韻：読者に選択を返す"],
+      catharsis:"自分を責めていた悩みが、やさしい一歩に変わる瞬間",
+      shift:"正しさよりも、まず気持ちが動ける形にすることが大切だと気づく",
+      scenarioRule:"共感の入口を最優先。怒鳴りや大事件ではなく、表情、生活小物、言いかけのセリフで読者を入れる。",
+      emotion:["胸のつかえ","言葉にならない本音","やわらかな反転","小さな勇気","静かな解放"],
+      visual:{
+        low:["主人公が生活感のある部屋で、言い出せない顔をしている","机にメモ、スマホ、飲みかけのカップが置かれている","窓の光はやさしいが、本人の手だけが止まっている","相手の視線に気づいて少し目を伏せる","笑う前の、まだ迷いが残る表情を大きく置く"],
+        friction:["うまく言えない言葉が、空白の吹き出しとして残る","同じ失敗を責めず、手元の小さな乱れで見せる","相手の一言に、主人公が少しだけ傷つく","花やカーテンなど穏やかな背景と内心の揺れを対比させる","読者が自分を重ねられる沈黙を置く"],
+        turn:["相手が強く正すのではなく、短い問いを置く","主人公の目線が少しだけ上がる","小物が『別の見方』を象徴する","背景の光が少し広がる","言葉ではなく、息を吸う間で変化を見せる"],
+        action:["ペンを持つ、送信する、立ち上がるなど小さな行動を描く","指先の震えをアップで見せる","完璧ではないメモに丸をつける","相手が横で静かに見守る","行動後の照れた表情で余白を作る"],
+        release:["最初より少しだけ明るい表情を大きく置く","読者へ結論を押しつけず、選べる言葉を残す","生活空間に小さな変化の証拠がある","相手と目線が合う","最後は柔らかい余韻で閉じる"]
+      },
+      dialogue:null
+    },
+    seinen: {
+      beats:["圧：逃げ場のない現実を突きつける","比較：周囲との差を見せる","対立：痛い言葉で核心に触れる","反撃：主人公が自分の行動で返す","余韻：勝敗ではなく覚悟が残る"],
+      catharsis:"追い詰められた主人公が、言い訳ではなく行動で返す瞬間",
+      shift:"便利さに頼るかどうかではなく、自分の責任で使いこなす覚悟の話だとわかる",
+      scenarioRule:"現実の圧、沈黙、視線、黒ベタで進める。セリフは短く、対立の一言を刺す。",
+      emotion:["圧迫感","劣等感","核心を突かれる痛み","反撃の集中","苦い余韻"],
+      visual:{
+        low:["暗い部屋で主人公が画面に向き合い、背中だけが硬い","机の上の資料や端末が重く積まれている","画面の光が顔を半分だけ照らす","相手が入口に立ち、距離を保って見ている","逃げ場のない構図で沈黙を置く"],
+        friction:["周囲の人間が先に進んでいる様子を背景に置く","主人公だけがログイン画面や白紙で止まる","汗、目線、硬い口元を細かく分解する","相手の横顔を黒ベタで切る","比較の痛みを大ゴマで受け止める"],
+        turn:["相手の一言が正面から刺さる","主人公が言い返せず、指だけが止まる","核心になる言葉を縦長の吹き出しで置く","部屋の奥行きを使って距離感を出す","表情より背中で敗北感を見せる"],
+        action:["主人公が端末やノートに向き直る","キーを打つ指を強く寄せる","斜めコマで作業の速度を上げる","相手は黙って見ている","反論ではなく結果を出す姿を描く"],
+        release:["勝った顔ではなく、少し疲れた横顔を置く","相手の表情がわずかに変わる","画面には小さな成果だけが映る","黒ベタを残して余韻を作る","最後は覚悟の一言で閉じる"]
+      },
+      dialogue:null
+    },
+    dark: {
+      beats:["孤独：誰にも届かない場所にいる","沈黙：言葉が消える","亀裂：小さな異物で世界が割れる","受容：壊れた事実を見つめる","余白：答えを黒の中に残す"],
+      catharsis:"壊れたものを直すのではなく、壊れたまま見つめて受け入れる瞬間",
+      shift:"失敗は敵ではなく、現実の輪郭を教えるものだと気づく",
+      scenarioRule:"事件を大きくしない。黒、余白、雨、極小の人物で内面を沈める。セリフは最小限。",
+      emotion:["孤独","空白","亀裂","受容","冷たい余韻"],
+      visual:{
+        low:["広すぎる余白の中に主人公を小さく置く","画面や机だけが白く浮かぶ","背景の黒が人物を飲み込む","目線を描かず、姿勢だけで疲れを見せる","音のない部屋を大きく描く"],
+        friction:["同じ失敗が並ぶが、説明せず黒い影で覆う","手の震えや割れた画面を極端に寄せる","吹き出しを空白のまま残す","遠くの時計や雨で時間の重さを出す","読者の息が止まる間を作る"],
+        turn:["小さな異物、通知、ひと言が黒い画面に入る","主人公が反応しないことで逆に変化を見せる","白い余白に短い言葉だけ置く","目のアップを一度だけ使う","壊れたものを見下ろす構図にする"],
+        action:["直すのではなく、壊れた状態を記録する","手元を静かに動かす","行動の音を描かず、影だけで変化させる","背中がほんの少し前に傾く","黒の中に小さな白を残す"],
+        release:["結論を言わず、黒い余白で終える","主人公の表情を半分だけ見せる","読者が意味を置ける空白を作る","小物だけが変化の証拠として残る","最後の一言は受容に留める"]
+      },
+      dialogue:null
+    },
+    softpop: {
+      beats:["困りごと：軽い悩みを親しみやすく出す","発見：便利な見方を見つける","試す：小さく操作する","変化：できた実感が出る","誘い：読者も真似できそうで終わる"],
+      catharsis:"難しそうなことが、ちょっと触れるだけで動き出す瞬間",
+      shift:"大きな決意より、試しやすい一歩が人を動かすとわかる",
+      scenarioRule:"重くしすぎない。説明も感動も小さく、親しみやすい手順と表情で進める。",
+      emotion:["軽い困り感","発見の明るさ","試す気軽さ","小さな達成","誘う余韻"],
+      visual:{
+        low:["明るい机で主人公が少し困った顔をしている","スマホ、付箋、飲み物など身近な小物を置く","悩みを重くせず、肩の力が抜けた表情にする","相棒が横からそっと覗く","小さな困りごとを大きくしすぎず見せる"],
+        friction:["同じところで止まる様子を軽いリアクションで描く","画面やメモの小さなズレを見せる","相棒が少し首をかしげる","空白を明るく残す","読者が笑って見られる失敗にする"],
+        turn:["相棒が簡単な言い換えを出す","主人公が『それならできるかも』という顔をする","小物が整理されていく","画面上に小さなチェックが入る","重い悩みが小さな手順になる"],
+        action:["クリックやメモ書きなど軽い操作を描く","小さな効果音を添える","相棒が横で見守る","操作前後の表情差を見せる","できた実感を手元で見せる"],
+        release:["笑顔を大きく置くが、泣かせすぎない","画面やノートに小さな成果が残る","読者にもできそうな余白を残す","相棒と軽く目が合う","最後は誘いの一言で終える"]
+      },
+      dialogue:null
+    },
+    pop: {
+      beats:["ドンと悩みを出す","派手に失敗する","キャラが勢いよく割り込む","一気に試す","大きな変化で締める"],
+      catharsis:"画面の勢いとリアクションで、悩みが一気にエネルギーへ変わる瞬間",
+      shift:"考え込むより、勢いよく試して画面を動かす方が突破口になる",
+      scenarioRule:"導入から画面を動かす。擬音、斜めコマ、強いリアクションでテンポを優先する。",
+      emotion:["勢い不足","派手な空回り","割り込みの驚き","加速","爽快感"],
+      visual:{
+        low:["主人公が悩みを抱えて画面の前で固まるが、背景はすでに派手","悩みの文字や小物が周囲に飛んでいる","表情を大きく、わかりやすく置く","相棒が画面外から入りそうな気配を作る","最初からスクロールを止める構図にする"],
+        friction:["失敗結果が派手に並ぶ","吹き出しや効果線で空回りを見せる","主人公が大きくのけぞる","小物が少し飛ぶ","読者が一瞬で状況を理解できる画にする"],
+        turn:["相棒が強いポーズで割り込む","画面が斜めに割れる","背景に星や集中線を入れる","主人公のリアクションを大きく置く","説明より勢いで方向転換する"],
+        action:["ボタン、ペン、足などを勢いよく動かす","コマを斜めにして加速感を出す","小さな連続コマでテンポを作る","相棒が横で煽る","一気に画面が変わる"],
+        release:["大きな決めポーズで締める","成果を画面いっぱいに見せる","主人公と相棒のリアクションを対比する","最後に短い決め台詞を置く","読後に明るい勢いが残る"]
+      },
+      dialogue:null
+    },
+    yurufuwa: {
+      beats:["ほわっと困る","小さく失敗する","やさしく教わる","ちょっとできる","にこっと終わる"],
+      catharsis:"失敗しても責められず、少し笑って進める瞬間",
+      shift:"ちゃんとできない自分も、かわいく前に進めばいいと感じられる",
+      scenarioRule:"深刻にしない。かわいい困り顔、小さな失敗、安心感のあるツッコミで読ませる。",
+      emotion:["ほわっと不安","かわいい失敗","安心","ちょっと成功","にこにこ余韻"],
+      visual:{
+        low:["丸いキャラが机でほわっと困っている","メモや小物をかわいく散らす","大げさに悩まず、頬を赤くする","相棒が横からやさしく見る","小さな失敗の予感を置く"],
+        friction:["チェックリストやメモを忘れる","同じ失敗をかわいい反復で見せる","主人公が汗を一粒かく","相棒が小さくツッコむ","空白を明るく残す"],
+        turn:["相棒がやさしく助け舟を出す","主人公がぱっと目を上げる","小物が整っていく","小さな花や星で気分を軽くする","行動の入口をかわいく見せる"],
+        action:["メモを書く、ぽちっと押すなど小さい動作を描く","手元を丸くかわいく寄せる","相棒が拍手する","主人公が照れる","小さな成功を画面に出す"],
+        release:["にこっとした顔を大きく置く","失敗メモも横に残して愛嬌にする","読者が安心できる一言で閉じる","相棒と並んで小さく喜ぶ","次も大丈夫という空気を作る"]
+      },
+      dialogue:null
+    },
+    gag: {
+      beats:["前フリ：本人だけ深刻に悩む","ズレ：助言を変な方向に解釈する","暴走：謎の行動を全力で始める","ツッコミ：読者代理が衝撃を受ける","オチ：一言で全部ひっくり返す"],
+      catharsis:"真面目な本音が、予想外すぎる行動や一言で一気に笑いへ変わる瞬間",
+      shift:"正しい解決よりも、テーマの本音とリアクションの落差が読者を動かす",
+      scenarioRule:"ボケ役を全力で本気にする。ツッコミ役は読者目線で遅れて反応し、最後は一言のオチで落とす。",
+      emotion:["妙に深刻","違和感","暴走加速","衝撃","脱力オチ"],
+      visual:{
+        low:["ボケ役が世界の終わりのような顔で、題材の本音を抱えている","題材に関係するメモや画面が、妙に壮大な儀式のように広がっている","ツッコミ役が半目で様子を見ている","背景だけやたらシリアスにする","悩みの小ささと顔の重さをズラす"],
+        friction:["本音の言葉だけをボケ役が大げさに受け取る","ツッコミ役の目が点になる","題材に関係する小物が一つだけ不穏に光る","同じ言葉を反復してズレを強める","読者が先にオチを察する間を置く"],
+        turn:["ボケ役が突然立ち上がる","画面が斜めに割れて暴走が始まる","ツッコミ役が一拍遅れて固まる","背景に無駄に大きな集中線を入れる","本音がなぜか大げさな行動に変換される"],
+        action:["ボケ役が題材に関係する謎行動を全力で始める","小さな連続コマで暴走の手順を見せる","ツッコミ役が追いつけず、表情だけが崩れる","効果音を大きく入れるが意味はずらす","行動のスケールだけ無駄に大きくする"],
+        release:["ツッコミ役の衝撃顔を大きく置く","ボケ役だけ満足げにして温度差を作る","最後の一言で意味をひっくり返す","背景を急に静かにして脱力させる","余韻よりも間抜けな沈黙で閉じる"]
+      },
+      dialogue:null
+    },
+    custom: {
+      beats:["入口：題材の一番強い違和感を出す","展開：関係性のズレを見せる","転換：見方が変わる瞬間を置く","行動：ひとつだけ具体的に動かす","余韻：結論を読者へ返す"],
+      catharsis:"題材の中にある一番強い落差が、画面上で可視化される瞬間",
+      shift:"入力文の核に合わせて、読者が自分の答えを選べる状態へ変わる",
+      scenarioRule:"入力文の温度を最優先し、必要なら共感、対立、ギャグ、ポップの演出を混ぜる。",
+      emotion:["違和感","揺れ","反転","行動","余韻"],
+      visual:null,
+      dialogue:null
+    }
+  };
+
+  const mangaLayouts = {
+    low:[
+      {
+        name:"沈黙の大ゴマ導入",
+        tags:["cinematic","quiet","emotion"],
+        rowTemplate:"1.55fr .65fr .65fr 1.05fr",
+        rows:[["無音の引き"],["手元","小物"],["横顔"],["決めゴマ"]],
+        intent:"最初に大きな余白で読者の呼吸を止め、手元と小物で悩みの正体をにじませる。",
+        slots:[
+          {area:"topWide", size:"大・横長", camera:"極端な引き", visual:0, text:0, note:"顔を急いで見せず、孤立感を先に置く。"},
+          {area:"startMid", size:"小", camera:"手元の極アップ", visual:1, text:1, note:"題材を小物で見せ、説明を避ける。"},
+          {area:"endMid", size:"小", camera:"沈黙する小物", visual:2, text:2, note:"心情を物の止まり方で見せる。"},
+          {area:"bottomKey", size:"決めゴマ", camera:"背中越しの画面", visual:4, text:4, note:"悩みの重さと画面の小ささを対比する。"}
+        ]
+      },
+      {
+        name:"SNS冒頭フック",
+        tags:["sns","gaggap","speed"],
+        rowTemplate:".72fr .72fr .72fr 1.45fr",
+        rows:[["表情","原因"],["反応","空白"],["小物"],["決めゴマ"]],
+        intent:"冒頭から強い違和感を出し、最後の大ゴマで読者の指を止める。",
+        slots:[
+          {area:"startTop", size:"小", camera:"顔の寄り", visual:0, text:0, note:"一瞬で感情を読ませる。"},
+          {area:"endTop", size:"小", camera:"画面の極アップ", visual:1, text:1, note:"悩みの原因を画で示す。"},
+          {area:"startMid", size:"小", camera:"読者代理の反応", visual:2, text:2, note:"読者の疑問をキャラに背負わせる。"},
+          {area:"endMid", size:"小", camera:"空白の間", visual:3, text:3, note:"言葉を抜いて違和感を残す。"},
+          {area:"bottomKey", size:"決めゴマ", camera:"急な引き", visual:4, text:4, note:"状況全体を見せてズレを強調する。"}
+        ]
+      },
+      {
+        name:"情景ノイズの入口",
+        tags:["cinematic","emotion","quiet"],
+        rowTemplate:".55fr .55fr 1.35fr .9fr",
+        rows:[["空","手"],["光","画面"],["人物"],["決めゴマ"]],
+        intent:"すぐ説明せず、空・光・手元の連続で無意識に感情を作る。",
+        slots:[
+          {area:"startTop", size:"極小", camera:"窓や空の小コマ", visual:3, text:1, note:"心情と逆の静かな景色を入れる。"},
+          {area:"endTop", size:"極小", camera:"止まった指先", visual:1, text:2, note:"動けなさを部分で見せる。"},
+          {area:"midWide", size:"大・縦長", camera:"人物を小さく置く引き", visual:0, text:0, note:"人物より空間を大きく使う。"},
+          {area:"bottomKey", size:"決めゴマ", camera:"画面光の中の横顔", visual:4, text:4, note:"読者が感情を置ける余白を残す。"}
+        ]
+      }
+    ],
+    friction:[
+      {
+        name:"部分の連続",
+        tags:["emotion","cinematic","quiet"],
+        rowTemplate:".55fr .55fr .55fr 1.45fr .85fr",
+        rows:[["目"],["口元"],["指"],["状況"],["決めゴマ"]],
+        intent:"微細な変化を積み、同じ失敗でも内面が揺れていることを見せる。",
+        slots:[
+          {area:"topWide", size:"極細", camera:"目元だけの横長コマ", visual:2, text:0, note:"説明前に違和感を置く。"},
+          {area:"midThin", size:"極細", camera:"口元の変化", visual:3, text:1, note:"言いかけて飲み込む間を作る。"},
+          {area:"midThin2", size:"極細", camera:"止まった指", visual:1, text:2, note:"動作の停止で葛藤を出す。"},
+          {area:"centerWide", size:"大", camera:"同じ失敗が並ぶ引き", visual:0, text:3, note:"反復を画面構成で見せる。"},
+          {area:"bottomKey", size:"決めゴマ", camera:"小物だけを残す引き", visual:4, text:4, note:"結論を言わず違和感で終える。"}
+        ]
+      },
+      {
+        name:"斜め分割の空回り",
+        tags:["speed","sns","gaggap"],
+        rowTemplate:".72fr .72fr .72fr .72fr 1.12fr",
+        rows:[["失敗","失敗"],["反応"],["原因","ズレ"],["空白"],["決めゴマ"]],
+        intent:"小コマを斜めに連打し、焦りや空回りを体感速度として読ませる。",
+        slots:[
+          {area:"startTop", size:"小・斜め", camera:"失敗結果の寄り", visual:0, text:0, note:"一つ目のズレを即見せる。"},
+          {area:"endTop", size:"小・斜め", camera:"別角度の失敗", visual:1, text:1, note:"似た画にせず角度を変える。"},
+          {area:"midWide", size:"中・斜め", camera:"のけぞるリアクション", visual:2, text:2, note:"読者代理の反応でテンポを上げる。"},
+          {area:"startBottom", size:"小", camera:"原因の小物", visual:3, text:3, note:"原因は説明せず小物に置く。"},
+          {area:"endBottom", size:"極小", camera:"意味ありげな空白", visual:3, text:3, note:"オチ前に一拍だけ無言のズレを挟む。"},
+          {area:"bottomKey", size:"決めゴマ", camera:"急停止の引き", visual:4, text:4, note:"動きのあとに静止を置いて落差を作る。"}
+        ]
+      },
+      {
+        name:"比較の圧",
+        tags:["cinematic","emotion","sns"],
+        rowTemplate:"1fr .7fr .7fr 1.25fr",
+        rows:[["周囲"],["主人公","画面"],["沈黙"],["決めゴマ"]],
+        intent:"周囲との差を先に見せ、主人公だけ時間が止まっているように配置する。",
+        slots:[
+          {area:"topWide", size:"中・横長", camera:"周囲が進む引き", visual:0, text:0, note:"主人公を画面端に寄せる。"},
+          {area:"startMid", size:"小", camera:"主人公の手元", visual:1, text:1, note:"比較の痛みを手元で受ける。"},
+          {area:"endMid", size:"小", camera:"相手の横顔", visual:2, text:2, note:"相手を正面にしすぎず距離を作る。"},
+          {area:"bottomKey", size:"決めゴマ", camera:"黒ベタの沈黙", visual:4, text:4, note:"圧を言葉で処理しない。"}
+        ]
+      }
+    ],
+    turn:[
+      {
+        name:"メクリの反転",
+        tags:["cinematic","sns","emotion"],
+        rowTemplate:"1.55fr .7fr 1.25fr",
+        rows:[["反転の大ゴマ"],["相手","小物"],["決めゴマ"]],
+        intent:"ページを開いた瞬間の大ゴマで、読者の予想を一段ずらす。",
+        slots:[
+          {area:"topWide", size:"大・断ち切り", camera:"白い余白の大ゴマ", visual:0, text:0, note:"言葉より先に空気を変える。"},
+          {area:"startMid", size:"小", camera:"一言を受ける横顔", visual:1, text:1, note:"反応を小さくして余韻を残す。"},
+          {area:"endMid", size:"小", camera:"象徴小物の寄り", visual:2, text:2, note:"視点転換を物で見せる。"},
+          {area:"bottomKey", size:"決めゴマ", camera:"目線が上がる正面", visual:4, text:4, note:"気づきは一言だけにする。"}
+        ]
+      },
+      {
+        name:"枠線がゆるむ気づき",
+        tags:["emotion","quiet","cinematic"],
+        rowTemplate:".8fr 1.2fr .8fr 1fr",
+        rows:[["沈黙"],["枠なし"],["手元","視線"],["決めゴマ"]],
+        intent:"転換の瞬間だけ枠線を弱め、内面のルールがほどける感覚を作る。",
+        slots:[
+          {area:"topWide", size:"中", camera:"沈黙の横顔", visual:1, text:0, note:"答えを急がない。"},
+          {area:"centerWide", size:"大・枠線なし", camera:"心象風景", visual:3, text:1, note:"現実の画から一瞬だけ心の中へ入る。"},
+          {area:"startBottom", size:"小", camera:"手元の変化", visual:2, text:2, note:"気づきを手の動きに置く。"},
+          {area:"bottomKey", size:"決めゴマ", camera:"余白の中の人物", visual:4, text:4, note:"押しつけず問いの形に近づける。"}
+        ]
+      },
+      {
+        name:"ギャグの一拍遅れ",
+        tags:["gaggap","sns","speed"],
+        rowTemplate:".7fr .7fr .7fr 1.4fr",
+        rows:[["ひらめき"],["相手"],["間"],["決めゴマ"]],
+        intent:"ひらめき、相手の遅れた反応、無言の間を置いてから落差を出す。",
+        slots:[
+          {area:"topWide", size:"中・斜め", camera:"突然立ち上がる全身", visual:0, text:0, note:"動き出しだけ大げさにする。"},
+          {area:"startMid", size:"小", camera:"相手の目だけの寄り", visual:1, text:1, note:"読者代理を一拍遅らせる。"},
+          {area:"endMid", size:"小", camera:"不穏な小物", visual:2, text:2, note:"小物に変な意味を持たせる。"},
+          {area:"midWide", size:"中・無言", camera:"誰も動かない引き", visual:3, text:3, note:"オチ前の空白を作る。"},
+          {area:"bottomKey", size:"決めゴマ", camera:"急な引き", visual:4, text:4, note:"意味のズレを絵で見せる。"}
+        ]
+      }
+    ],
+    action:[
+      {
+        name:"行動の分解",
+        tags:["emotion","cinematic","speed"],
+        rowTemplate:".55fr .55fr .55fr .95fr 1.35fr",
+        rows:[["手"],["足"],["画面"],["相手"],["決めゴマ"]],
+        intent:"一つの行動を細かく割り、読者に『動いた』感覚を体験させる。",
+        slots:[
+          {area:"topWide", size:"極細", camera:"指先の動き", visual:1, text:0, note:"行動開始を最小単位で見せる。"},
+          {area:"midThin", size:"極細", camera:"足元の一歩", visual:2, text:1, note:"体が先に動いたことを示す。"},
+          {area:"midThin2", size:"極細", camera:"画面の小さな変化", visual:0, text:2, note:"結果は小さく見せる。"},
+          {area:"centerWide", size:"中", camera:"見守る相手の引き", visual:3, text:3, note:"説明役にしない。"},
+          {area:"bottomKey", size:"決めゴマ", camera:"背中からの大ゴマ", visual:4, text:4, note:"完璧ではないが進んだ姿を置く。"}
+        ]
+      },
+      {
+        name:"速度の斜め連打",
+        tags:["speed","sns","gaggap"],
+        rowTemplate:".72fr .72fr .72fr .72fr 1.12fr",
+        rows:[["始動","加速"],["小コマ","小コマ"],["小コマ"],["反応"],["決めゴマ"]],
+        intent:"斜めコマと小コマ連続で、停滞から一気に流れ出す感覚を作る。",
+        slots:[
+          {area:"startTop", size:"小・斜め", camera:"ボタンやペン先", visual:0, text:0, note:"始動を強く切る。"},
+          {area:"endTop", size:"小・斜め", camera:"被写体ブレ", visual:1, text:1, note:"スピード線だけに頼らない。"},
+          {area:"startMid", size:"小", camera:"小物が動く寄り", visual:2, text:2, note:"行動の副作用を見せる。"},
+          {area:"endMid", size:"小", camera:"相手のリアクション", visual:3, text:3, note:"読者の驚きを拾う。"},
+          {area:"midThin", size:"極細", camera:"一瞬だけ止まる無音コマ", visual:3, text:3, note:"加速の途中に沈黙を挟み、次の大ゴマを強くする。"},
+          {area:"bottomKey", size:"決めゴマ", camera:"斜めの大ゴマ", visual:4, text:4, note:"流れが変わったことを画面全体で示す。"}
+        ]
+      },
+      {
+        name:"静かな実行",
+        tags:["quiet","emotion","cinematic"],
+        rowTemplate:"1fr .65fr 1.6fr",
+        rows:[["準備"],["手元","呼吸"],["決めゴマ"]],
+        intent:"派手に動かず、呼吸と手元だけで覚悟の質を見せる。",
+        slots:[
+          {area:"topWide", size:"中・横長", camera:"机全体の引き", visual:0, text:0, note:"行動前の整った静けさを置く。"},
+          {area:"startMid", size:"小", camera:"ペン先や指の寄り", visual:1, text:1, note:"小さな動作を大切に見せる。"},
+          {area:"endMid", size:"小", camera:"息を吸う横顔", visual:3, text:3, note:"言葉より呼吸で決意を出す。"},
+          {area:"bottomKey", size:"決めゴマ", camera:"画面光に照らされた背中", visual:4, text:4, note:"行動後の余白を残す。"}
+        ]
+      }
+    ],
+    release:[
+      {
+        name:"問いの余白",
+        tags:["quiet","emotion","cinematic"],
+        rowTemplate:"1.7fr .75fr 1.15fr",
+        rows:[["余韻の大ゴマ"],["証拠","相手"],["問い"]],
+        intent:"説明で締めず、変化の証拠と問いを置いて読者へ返す。",
+        slots:[
+          {area:"topWide", size:"大・横長", camera:"最初と対になる引き", visual:0, text:0, note:"序盤との差を静かに見せる。"},
+          {area:"startMid", size:"小", camera:"変化の証拠の小物", visual:3, text:1, note:"行動の結果を小さく置く。"},
+          {area:"endMid", size:"小", camera:"相手と目線が合う寄り", visual:2, text:2, note:"関係性の変化を一瞬だけ見せる。"},
+          {area:"bottomKey", size:"決めゴマ", camera:"読者側へ余白を残す背中", visual:4, text:4, note:"断定でなく選択の余白にする。"}
+        ]
+      },
+      {
+        name:"一枚絵の着地",
+        tags:["sns","cinematic","quiet"],
+        rowTemplate:"1fr",
+        rows:[["全面決めゴマ"]],
+        intent:"最終ページをほぼ一枚絵にして、読後の感情を長く残す。",
+        slots:[
+          {area:"full", size:"全面・決めゴマ", camera:"断ち切りの大ゴマ", visual:4, text:4, note:"文字を最小限にし、表情と空間で終える。"}
+        ]
+      },
+      {
+        name:"ギャグの急停止",
+        tags:["gaggap","sns","speed"],
+        rowTemplate:".65fr .65fr 1.7fr",
+        rows:[["満足","衝撃"],["沈黙"],["オチ"]],
+        intent:"温度差のある2コマから、急に広い引きへ落として脱力させる。",
+        slots:[
+          {area:"startTop", size:"小", camera:"満足げな正面", visual:0, text:0, note:"本人だけ納得している温度を出す。"},
+          {area:"endTop", size:"小", camera:"衝撃顔の寄り", visual:1, text:1, note:"読者代理の顔で受ける。"},
+          {area:"midWide", size:"中・無言", camera:"空白の引き", visual:3, text:3, note:"一拍沈黙させる。"},
+          {area:"bottomKey", size:"決めゴマ", camera:"急な遠景", visual:4, text:4, note:"最後の一言でズラす。"}
+        ]
+      }
+    ]
+  };
+
+  const goldenLayouts = {
+    low:{
+      name:"王道5コマZ：停止の原稿化",
+      tags:["stable"],
+      rowTemplate:"1fr .95fr 1.35fr",
+      rows:[["部屋","手元"],["具体物","横顔"],["決めゴマ"]],
+      intent:"手元、部屋の引き、具体物、横顔を通って、下段の感情大ゴマへ落とす。画像生成AIが1ページ漫画として理解しやすい王道構成。",
+      grammar:"1ページの中で、状況、原因、内面、具体物、感情ピークを全部見せる。顔アップだけにせず、生活空間と小物で物語を読ませる。",
+      slots:[
+        {area:"startTop", size:"小", camera:"部屋の引き", visual:0, text:0, note:"まず人物の置かれた場所と停止感を見せる。"},
+        {area:"endTop", size:"小", camera:"スマホやペンを持つ手元", visual:1, text:1, note:"悩みの原因を手元と道具で見せる。"},
+        {area:"startMid", size:"中", camera:"ノートや付箋の極アップ", visual:2, text:2, note:"テーマの具体情報を、読める範囲のメモとして置く。"},
+        {area:"endMid", size:"小", camera:"窓辺の横顔", visual:3, text:3, note:"言葉を抜いて内面の間を作る。"},
+        {area:"bottomKey", size:"決めゴマ", camera:"背中越しの画面", visual:4, text:4, note:"下段で感情を一気に沈める。1ページ1テーマのピーク。"}
+      ]
+    },
+    friction:{
+      name:"王道5コマZ：反復とズレ",
+      tags:["stable"],
+      rowTemplate:"1fr .95fr 1.35fr",
+      rows:[["反復","手元"],["原因","反応"],["決めゴマ"]],
+      intent:"同じ失敗の反復を、構図と小物で見せる。読者に『どこが詰まっているか』を絵で理解させる。",
+      grammar:"情報を説明文で処理せず、増えたメモ、止まった指、相棒の反応、空白の大ゴマでズレを伝える。",
+      slots:[
+        {area:"startTop", size:"小", camera:"同じ構図の反復", visual:0, text:0, note:"反復で停滞を見せる。"},
+        {area:"endTop", size:"小", camera:"止まった指のアップ", visual:1, text:1, note:"動けない理由を手元に置く。"},
+        {area:"startMid", size:"中", camera:"メモや画面の極アップ", visual:2, text:2, note:"詰まりの原因を具体物で見せる。"},
+        {area:"endMid", size:"小", camera:"相棒の一拍遅れた反応", visual:3, text:3, note:"読者代理の反応を置く。"},
+        {area:"bottomKey", size:"決めゴマ", camera:"空白を含む引き", visual:4, text:4, note:"違和感を大ゴマで止める。"}
+      ]
+    },
+    turn:{
+      name:"王道5コマZ：気づきの位置を作る",
+      tags:["stable"],
+      rowTemplate:"1fr .95fr 1.35fr",
+      rows:[["問い","反応"],["象徴","視線"],["決めゴマ"]],
+      intent:"助言や小物で見方が変わる瞬間を作り、下段の決めゴマで『そういうことか』を見せる。",
+      grammar:"気づきは説明しない。短い問い、視線の変化、整ったメモ、手元の小さな動きで表現する。",
+      slots:[
+        {area:"startTop", size:"小", camera:"相手の一言を受ける横顔", visual:0, text:0, note:"転換の入口を短く置く。"},
+        {area:"endTop", size:"小", camera:"相棒の静かな表情", visual:1, text:1, note:"強く正さず、読者が考える余白を残す。"},
+        {area:"startMid", size:"中", camera:"整理されたノートの極アップ", visual:2, text:2, note:"視点転換を具体物で見せる。"},
+        {area:"endMid", size:"小", camera:"目線が上がる寄り", visual:3, text:3, note:"表情の微変化で感情を動かす。"},
+        {area:"bottomKey", size:"決めゴマ", camera:"白い余白の大ゴマ", visual:4, text:4, note:"気づきを一言に圧縮する。"}
+      ]
+    },
+    action:{
+      name:"王道5コマZ：小さな一手",
+      tags:["stable"],
+      rowTemplate:"1fr .95fr 1.35fr",
+      rows:[["準備","指"],["画面","見守り"],["決めゴマ"]],
+      intent:"大きな解決ではなく、手元の一動作を読者に見せる。行動の始まりを漫画的な時間で伸ばす。",
+      grammar:"クリック、書く、指す、立つなど一つの動作に絞る。結果より『動き出した』感覚を優先する。",
+      slots:[
+        {area:"startTop", size:"小", camera:"机全体の引き", visual:0, text:0, note:"行動前の場を整える。"},
+        {area:"endTop", size:"小", camera:"指先の極アップ", visual:1, text:1, note:"一手を大きく見せる。"},
+        {area:"startMid", size:"中", camera:"画面やノートの変化", visual:2, text:2, note:"小さな結果を具体物に出す。"},
+        {area:"endMid", size:"小", camera:"見守る相棒の横顔", visual:3, text:3, note:"説明役にせず、反応だけ置く。"},
+        {area:"bottomKey", size:"決めゴマ", camera:"背中からの大ゴマ", visual:4, text:4, note:"まだ未完成でも始まった姿を置く。"}
+      ]
+    },
+    release:{
+      name:"王道5コマZ：余韻と問い",
+      tags:["stable"],
+      rowTemplate:"1fr .95fr 1.35fr",
+      rows:[["変化","証拠"],["相手","沈黙"],["決めゴマ"]],
+      intent:"結論を押し付けず、変化の証拠、相手の反応、最後の余白で読者へ返す。",
+      grammar:"最終ページでも説明しすぎない。最初のページと対になる構図を置き、読者が自分の答えを置ける大ゴマで終える。",
+      slots:[
+        {area:"startTop", size:"小", camera:"最初と対になる部屋の引き", visual:0, text:0, note:"変化を静かに見せる。"},
+        {area:"endTop", size:"小", camera:"残されたメモや小物", visual:3, text:1, note:"行動の証拠を置く。"},
+        {area:"startMid", size:"中", camera:"相棒と目線が合う寄り", visual:2, text:2, note:"関係性の変化を見せる。"},
+        {area:"endMid", size:"小", camera:"言葉のない横顔", visual:3, text:3, note:"最後の前に間を置く。"},
+        {area:"bottomKey", size:"決めゴマ", camera:"読者側へ余白を残す背中", visual:4, text:4, note:"問いの余白で閉じる。"}
+      ]
+    }
+  };
+
+  const cameraPool = {
+    low:["部屋の引き","スマホを持つ手元","ノートや付箋の極アップ","横顔の寄り","背中越しの画面"],
+    friction:["画面越しの発光","同じ顔が並ぶページ","止まった指のアップ","目だけの寄り","遠い部屋の引き"],
+    turn:["白い余白の大ゴマ","誰かの一言を受ける横顔","机に置かれた小物","目線が少し上がる寄り","画面に映る小さな変化"],
+    action:["クリックする指","ペン先のアップ","一歩を出す足","背中の引き","斜めに流れる行動コマ"],
+    release:["顔の寄り","光の入る窓辺","胸にノートを抱える正面","涙か笑顔の大ゴマ","読者へ余白を残す背中"]
+  };
+
+  let current = {
+    purpose:"sns",
+    markdown:"",
+    prompt:"",
+    activeView:"overview",
+    hasGenerated:false
+  };
+
+  function cleanText(text){
+    return (text || "").replace(/\s+/g," ").trim();
+  }
+
+  function splitSentences(text){
+    const normalized = cleanText(text);
+    if(!normalized) return [];
+    return normalized
+      .split(/[。！？!?]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
+  function keywordize(text){
+    const source = cleanText(text);
+    if(!source) return ["変化","選択","小さな行動"];
+    const priorityTerms = [
+      "漫画の文法","マンガの文法","カメラワーク","コマの強弱","キャラ識別",
+      "セリフの引き算","視線誘導","小さな行動","画像生成",
+      "AI漫画","AIマンガ","プロンプト","キャラクター","読者","発信",
+      "商品紹介","体験談","教育","SNS","note","LP"
+    ].filter((term) => source.includes(term));
+    const words = source
+      .replace(/[、。！？!?「」『』（）()【】\[\]・,./]/g," ")
+      .split(/\s+/)
+      .map((w) => w.trim())
+      .flatMap((w) => w.split(/けど|でも|しかし|だから|ので|なら|には|とは/))
+      .map((w) => w.trim())
+      .filter((w) => w.length >= 2 && w.length <= 18 && !["こと","もの","ため","それ","これ","よう","さん","できる","できない"].includes(w));
+    return [...new Set([...priorityTerms, ...words])].slice(0,8);
+  }
+
+  function pick(arr, index){
+    return arr[index % arr.length];
+  }
+
+  function extractProtagonist(characterText){
+    const text = cleanText(sanitizeCharacterText(characterText));
+    if(!text) return "主人公";
+    const named = text.match(/^([^：:\n。]{2,18})[：:]/);
+    if(named) return named[1].trim();
+    const match = text.match(/(?:主人公|主役|登場人物|キャラ)[は：:、 ]*([^。]+?)(?:。|、|。|$)/);
+    if(match) return match[1].slice(0,22);
+    return text.split(/[。、]/)[0].slice(0,22) || "主人公";
+  }
+
+  function extractCast(characterText){
+    const text = sanitizeCharacterText(characterText);
+    const names = [...text.matchAll(/(^|\n)\s*([^：:\n。]{2,18})[：:]/g)].map((m) => m[2].trim());
+    const lead = names[0] || extractProtagonist(characterText);
+    const buddy = names[1] || "相棒";
+    return {lead, buddy, names};
+  }
+
+  function buildCore(input){
+    const source = cleanText(input.sourceText);
+    const sentences = splitSentences(source);
+    const keys = keywordize(source);
+    const characterText = sanitizeCharacterText(input.characterText);
+    const cast = extractCast(characterText);
+    const protagonist = cast.lead;
+    const conflict = sentences.find((s) => /できない|わからない|届かない|止ま|怖|迷|失敗|違う|不安|悩/.test(s)) || sentences[0] || "思いはあるのに、形にできない";
+    const desire = sentences.find((s) => /したい|届け|作り|変え|伝え|始め|なりたい|手に入れ/.test(s)) || source || "自分の思いを届けたい";
+    const themeFocus = extractThemeFocus(source, keys, desire);
+    const punchline = extractPunchline(source, themeFocus);
+    const shift = makeShift(input, keys, themeFocus);
+    const readerEntrance = makeReaderEntrance(input, {cast, conflict, keys, themeFocus});
+    return {source, sentences, keys, protagonist, cast, conflict, desire, shift, themeFocus, punchline, readerEntrance};
+  }
+
+  function sanitizeCharacterText(characterText){
+    const text = characterText || "";
+    const looksLikeRules = /キャラクター設計|特技（憧れ）|品質評価|シルエット・テスト|台詞テスト|日本のマンガ文法|演出規則|Manga Name Creator/i.test(text);
+    if(looksLikeRules) return "";
+    return text;
+  }
+
+  function extractThemeFocus(source, keys, desire){
+    const fromTheme = source.match(/(?:テーマ|題材|原作メモ)[：:]\s*([^。！？!?]{4,48})/);
+    const fromSpecific = source.match(/([^。！？!?]*(?:Roblox|ゲーム|漫画|マンガ|AI|note|SNS|LP|商品|副業|学校|仕事|家計|発信|制作)[^。！？!?]*)/i);
+    const sentences = splitSentences(source);
+    const quoted = source.match(/「([^」]{2,30})」/);
+    const priceWish = sentences.find((s) => /祈|高く|価格|値段|料金|安く|無料/.test(s));
+    const wish = priceWish || sentences.find((s) => /一番|望む/.test(s));
+    const secondFocus = sentences.find((s) => s !== desire && /一歩|怖|悩|止ま|でき|したい|だけ|変わ|届け|伝え/.test(s));
+    const base = fromTheme?.[1] || fromSpecific?.[1] || desire || sentences[0] || keys[0] || "新しいテーマ";
+    const anchor = quoted?.[1] ? `「${quoted[1]}」` : "";
+    const rawBase = anchor && fromSpecific?.[1] && priceWish
+      ? `${anchor}で作りたいアプリ案。${priceWish}`
+      : anchor && wish
+        ? `${anchor}でやりたいこと。${wish}`
+      : anchor && base.length < 46
+        ? `${anchor}。${base}`
+        : base;
+    const raw = !priceWish && secondFocus && rawBase.length < 46 ? `${rawBase}。${secondFocus}` : rawBase;
+    const withoutIntent = raw.replace(/だと伝えたい$/,"").replace(/を?伝えたい$/,"");
+    return cleanConcept(withoutIntent)
+      .replace(/^新テーマ[：:]/,"")
+      .trim()
+      .slice(0,72) || "新しいテーマ";
+  }
+
+  function extractPunchline(source, themeFocus){
+    const sentences = splitSentences(source);
+    const wish = sentences.find((s) => /祈|高く|価格|値段|料金|安く|無料/.test(s)) || sentences.find((s) => /一番|望む/.test(s));
+    const raw = wish || themeFocus || "この願い";
+    return cleanConcept(raw)
+      .replace(/^でも一番望むことはこれ[。 ]*/,"")
+      .replace(/^・・・/,"")
+      .replace(/を?祈ってます$/,"")
+      .replace(/だと伝えたい$/,"")
+      .trim() || "この願い";
+  }
+
+  function makeReaderEntrance(input, core){
+    const lead = core.cast?.lead || "主人公";
+    const buddy = core.cast?.buddy || "相棒";
+    const hasBuddy = core.cast?.names?.length >= 2;
+    const topic = cleanConcept(core.themeFocus || core.keys?.[0] || core.conflict || "悩み");
+    const topicLabel = quoteConcept(topic);
+    if(input.taste === "gag" && hasBuddy){
+      return `${lead}が${topicLabel}で深刻に悩み、${buddy}が読者目線でツッコむ場面`;
+    }
+    if(hasBuddy){
+      return `${lead}が${topicLabel}でつまずく悩みを、${buddy}が読者目線で受け止める場面`;
+    }
+    return `${topicLabel}という期待と本音に、読者が自分ごととして入りやすい場面`;
+  }
+
+  function makeShift(input, keys, themeFocus){
+    const profile = getStoryProfile(input.taste);
+    if(profile && input.taste !== "custom") return `${profile.shift}。今回は${quoteConcept(themeFocus)}の具体行動として見せる`;
+    const main = cleanConcept(keys[0]) || "行動";
+    const second = cleanConcept(keys[1]) || "最初の一歩";
+    const map = {
+      universal:`${main}を、大きな悩みではなく小さく試せる形に分ける`,
+      conflict:`正しさの衝突ではなく、聞けなかった弱さが本当の障壁だったとわかる`,
+      challenge:`準備を増やすより、下手な一歩が本当の練習を始める`,
+      product:`何かを手に入れる話ではなく、${main}を自分で選び直す話へ変わる`,
+      lesson:`失敗を責めるのではなく、足りない手順を分解すれば次に進めるとわかる`
+    };
+    return `${map[input.structure] || `見方を変えることで、${main}が動き出す`}。焦点は${quoteConcept(themeFocus)}から外さない`;
+  }
+
+  function getStoryProfile(taste){
+    return tasteStoryProfiles[taste] || tasteStoryProfiles.custom;
+  }
+
+  function quoteConcept(text){
+    const value = cleanConcept(text || "新しいテーマ");
+    if(/^「.*」/.test(value)) return value;
+    return `「${value}」`;
+  }
+
+  function cleanConcept(text){
+    return cleanText(text)
+      .replace(/^(でも|しかし|だから|そして)/,"")
+      .replace(/を?伝えたい$/,"")
+      .replace(/を?作りたい$/,"")
+      .replace(/ばかり$/,"")
+      .trim();
+  }
+
+  function roleFor(index, count, input){
+    const profile = getStoryProfile(input.taste);
+    const base = profile?.beats || structureBeats[input.structure] || structureBeats.universal;
+    if(count <= base.length) return base[Math.round(index * (base.length - 1) / Math.max(1, count - 1))];
+    if(index < base.length) return base[index];
+    return index === count - 1 ? base[base.length - 1] : `深掘り：変化を別角度から見せる`;
+  }
+
+  function buildStoryPlan(input, core, count){
+    const route = chooseStoryRoute(input, core);
+    const beats = route.beats;
+    const fitted = [];
+    for(let i=0;i<count;i++){
+      const sourceIndex = count <= beats.length
+        ? Math.round(i * (beats.length - 1) / Math.max(1, count - 1))
+        : Math.min(i, beats.length - 1);
+      const base = beats[sourceIndex];
+      if(count > beats.length && i >= beats.length - 1 && i < count - 1){
+        fitted.push({
+          ...base,
+          role:`深掘り：${base.role.replace(/^[^：]+：/,"")}を別角度から見せる`,
+          scene:`${base.scene}。同じ結論に行かず、別の小物・距離・沈黙で変化を描く`
+        });
+      }else{
+        fitted.push(base);
+      }
+    }
+    return fitted.map((beat, index) => ({
+      ...beat,
+      route:route.name,
+      role:beat.role,
+      kind:beat.kind || classifyRole(beat.role),
+      index
+    }));
+  }
+
+  function chooseStoryRoute(input, core){
+    const taste = input.taste;
+    const mode = input.directionMode || "auto";
+    const source = core.source || "";
+    const focus = shortConcept(core.themeFocus || "このテーマ");
+    const punch = shortConcept(core.punchline || core.themeFocus || "本音");
+    const lead = core.cast?.lead || core.protagonist || "主人公";
+    const buddy = core.cast?.buddy || "相棒";
+    const hasPrice = /祈|高く|価格|値段|料金|安く|無料/.test(source);
+    const hasFuture = /作りたい|アプリ|ゲーム|マンガ|漫画|AI|未来|妄想|アイデア/.test(source);
+    const hasCannot = /できない|続かない|止ま|怖|迷|不安|悩/.test(source);
+
+    if(mode === "stable"){
+      return routeGoldenGrammar({focus, punch, lead, buddy, taste, hasPrice, hasFuture, hasCannot});
+    }
+    if(taste === "gag" && hasPrice){
+      return routeGagPrice({focus, punch, lead, buddy});
+    }
+    if(taste === "gag" || mode === "gaggap"){
+      return routeGagMisread({focus, punch, lead, buddy});
+    }
+    if(mode === "speed" || mode === "sns" || input.purpose === "sns"){
+      return routeHookSpeed({focus, punch, lead, buddy});
+    }
+    if(mode === "quiet" || taste === "dark"){
+      return routeQuietInner({focus, punch, lead, buddy});
+    }
+    if(hasFuture){
+      return routeFuturePreview({focus, punch, lead, buddy});
+    }
+    if(hasCannot){
+      return routeHumanRecovery({focus, punch, lead, buddy});
+    }
+    return routeDiscovery({focus, punch, lead, buddy});
+  }
+
+  function routeGoldenGrammar({focus, punch, lead, buddy, taste, hasPrice, hasFuture, hasCannot}){
+    const gag = taste === "gag";
+    const focusScene = hasFuture
+      ? `${focus}のアイデアやメモが机に広がり、やりたいことの量だけが先に増えている`
+      : `${focus}に関係するメモ、スマホ、ノートが机に置かれている`;
+    const hiddenPain = hasPrice
+      ? `最後に${punch}という本音が小さく刺さる`
+      : hasCannot
+        ? `動きたいのに止まってしまう体感が残る`
+        : `まだ言葉にならない違和感が残る`;
+    const turnAction = gag
+      ? `${buddy}の助言を聞いた${lead}が、なぜか一段ズレた本気の解釈をする`
+      : `${buddy}の一言や小さな小物で、${lead}の見方が少し変わる`;
+    const actionScene = hasPrice && gag
+      ? `${lead}が大きな夢を語りながら、まず${punch}を守る行動に出る`
+      : `${lead}が${focus}を、今日できる一手にまで小さくする`;
+    return {
+      name:"王道ネーム文法ルート",
+      beats:[
+        {role:"Low：手元と部屋で止まる", kind:"low", scene:`${lead}が日常の部屋で手を止めている。${focusScene}`, device:"右上の部屋の引き、左上の手元、右中のノートで状況を読ませる", payoff:hiddenPain},
+        {role:"違和感：準備だけが増える", kind:"friction", scene:`やりたいことや準備物は増えているのに、${lead}の指だけが止まっている`, device:"同じ失敗を説明せず、メモの増殖、止まった指、相棒の反応で見せる", payoff:"読者が『進まない理由』を自分で探し始める"},
+        {role:"転換：見方が一段ずれる", kind:"turn", scene:turnAction, device:"相棒の一言、整理されたメモ、目線が上がる横顔で気づきを作る", payoff:gag ? "正しさではなくズレの本気度で笑いを作る" : "問題が才能ではなく、手渡すサイズだったと見える"},
+        {role:"小さな行動：一手だけ動く", kind:"action", scene:actionScene, device:"指先、画面、ノート、背中の順で行動を分解する", payoff:"完成ではなく、始まったことを決めゴマにする"},
+        {role:"余韻：本音を残して読者へ返す", kind:"release", scene:`${lead}と${buddy}の温度差、または静かな納得を残し、${punch}を短い余韻にする`, device:"最初と対になる部屋、残ったメモ、背中越しの画面で締める", payoff:"結論を押しつけず、読者が次の一歩を選べる"}
+      ]
+    };
+  }
+
+  function routeGagPrice({focus, punch, lead, buddy}){
+    return {
+      name:"料金本音の暴走ギャグルート",
+      beats:[
+        {role:"妄想爆発：未来アプリ案が机からあふれる", kind:"low", scene:`${lead}が「${focus}」のアイデアを山ほど並べ、本人だけ国家プロジェクト級の顔をしている`, device:"付箋・巻物・画面を増殖させて、妄想の量を絵で見せる", payoff:"壮大な構図なのに悩みは生活感のある本音"},
+        {role:"現実の針：本音の値段だけが刺さる", kind:"friction", scene:`${buddy}が冷静に見ている横で、${lead}の視線だけが「${punch}」に吸い寄せられる`, device:"画面の価格欄だけ白く光らせ、他の夢を一瞬ぼかす", payoff:"夢より値段を気にしている温度差"},
+        {role:"誤読：アドバイスを祈願儀式に変換する", kind:"turn", scene:`${buddy}の普通の助言を、${lead}がなぜか全力の祈願ポーズに変換する`, device:"正しい助言を一段ずらして、行動だけ大げさにする", payoff:"読者が先に『そこ？』と気づく間"},
+        {role:"暴走：未来開発より先に価格へ祈る", kind:"action", scene:`${lead}が${focus}のためと言いながら、まず料金が優しい世界を祈り始める`, device:"小コマ連打で祈りの手順を無駄に細かく分解する", payoff:"本音が行動を乗っ取る瞬間"},
+        {role:"オチ：夢の大きさと財布の小ささが並ぶ", kind:"release", scene:`${buddy}が固まり、${lead}だけ満足げに『${punch}』を守りきった顔をする`, device:"最後だけ急な遠景にして、部屋の静けさで脱力させる", payoff:"大きな夢を笑いにしつつ、本音には共感が残る"}
+      ]
+    };
+  }
+
+  function routeGagMisread({focus, punch, lead, buddy}){
+    return {
+      name:"誤読暴走ギャグルート",
+      beats:[
+        {role:"前フリ：本人だけ深刻に悩む", kind:"low", scene:`${lead}が「${focus}」を世界の危機のように抱える`, device:"背景だけ重厚にして、悩みとの落差を作る", payoff:"深刻さのサイズがおかしい"},
+        {role:"ズレ：助言を変な方向へ受け取る", kind:"friction", scene:`${buddy}の一言を、${lead}が都合よく誤読する`, device:"同じ構図を反復し、少しずつ表情だけ壊す", payoff:"読者が先にオチを察する"},
+        {role:"反転：ひらめきの方向が明後日へ飛ぶ", kind:"turn", scene:`${lead}が急に立ち上がり、${focus}とは微妙に違う準備を始める`, device:"斜め大ゴマで勢いだけ正しそうに見せる", payoff:"勢いと目的のズレ"},
+        {role:"暴走：本気だから止めにくい", kind:"action", scene:`${lead}が全力でズレた行動を積み重ね、${buddy}が止めるタイミングを失う`, device:"小コマで手順を細かく見せ、無駄な真剣さを強調する", payoff:"真面目さが笑いになる"},
+        {role:"オチ：最後に本音だけが残る", kind:"release", scene:`最後に「${punch}」だけが妙に正直に残り、${buddy}が読者の顔で固まる`, device:"急な引きと無言で脱力させる", payoff:"ズレているのに本音にはうなずける"}
+      ]
+    };
+  }
+
+  function routeFuturePreview({focus, punch, lead, buddy}){
+    return {
+      name:"未来先出しから現実へ落とすルート",
+      beats:[
+        {role:"未来先出し：叶った世界を一瞬だけ見せる", kind:"low", scene:`${focus}が完成した未来を、冒頭の決めゴマで先に見せる`, device:"理想の画を先に置き、次のページで現実へ落とす", payoff:"読者に『見たい未来』を先に渡す"},
+        {role:"現実落差：手元にはまだ白紙だけがある", kind:"friction", scene:`${lead}の手元には、未来とは真逆の白紙や未完成の画面だけが残る`, device:"未来の密度と現実の余白を対比する", payoff:"夢と現在の距離が見える"},
+        {role:"視点転換：全部ではなく最初の一画面へ絞る", kind:"turn", scene:`${buddy}が大きな夢を責めず、まず一画面だけに分ける`, device:"散らかった要素を一つの小物へ集約する", payoff:"大きな夢が触れるサイズになる"},
+        {role:"実験：一分だけ触れる形にする", kind:"action", scene:`${lead}が${focus}の最小版を、完璧でないまま試す`, device:"指先、画面、呼吸の順で行動を分解する", payoff:"完成より先に体験が始まる"},
+        {role:"余韻：夢は縮んだのではなく始まった", kind:"release", scene:`最後に${punch}も含めた本音を残し、次に選べる余白へ返す`, device:"最初の未来画と対になる静かな構図を置く", payoff:"夢の大きさと今日の一歩がつながる"}
+      ]
+    };
+  }
+
+  function routeHookSpeed({focus, punch, lead, buddy}){
+    return {
+      name:"SNSフック高速ルート",
+      beats:[
+        {role:"即フック：違和感を1コマ目から出す", kind:"low", scene:`${lead}の顔より先に「${focus}」の違和感が画面へ飛び込む`, device:"冒頭から決めゴマ級の画を置く", payoff:"スクロールを止める"},
+        {role:"連打：試した結果が次々ズレる", kind:"friction", scene:`似た失敗を角度違いで連続させ、同じ画に見せない`, device:"斜め分割と小コマ連打で体感速度を上げる", payoff:"読者が状況を一瞬で理解する"},
+        {role:"割り込み：相棒が視点を奪う", kind:"turn", scene:`${buddy}が画面外から割り込み、${focus}の見方を一言で変える`, device:"画面を斜めに割る", payoff:"空気が一段変わる"},
+        {role:"加速：一つだけ試す", kind:"action", scene:`${lead}が迷いを残したまま、一つだけ具体行動に変える`, device:"手、足、画面の順に時間を刻む", payoff:"停滞から動きへ切り替わる"},
+        {role:"着地：本音を短く返す", kind:"release", scene:`${punch}を長く説明せず、最後の短い一言と大ゴマで返す`, device:"最後だけ静止させる", payoff:"勢いのあとに読後感を残す"}
+      ]
+    };
+  }
+
+  function routeQuietInner({focus, punch, lead, buddy}){
+    return {
+      name:"静かな内面沈下ルート",
+      beats:[
+        {role:"空白：人物より部屋が大きい", kind:"low", scene:`${lead}を小さく置き、「${focus}」だけが部屋に残っているように見せる`, device:"極端な余白と引きのコマ", payoff:"読者の呼吸を遅くする"},
+        {role:"微細：目元、口元、指先だけが変わる", kind:"friction", scene:`感情を説明せず、体の一部の変化で揺れを積む`, device:"極細コマの三連続", payoff:"内面の変化を読者に読ませる"},
+        {role:"亀裂：小さな通知や小物で世界が割れる", kind:"turn", scene:`小さな異物が入り、${lead}の見方が少しだけずれる`, device:"黒や白の余白に一点だけ情報を置く", payoff:"静かな転換"},
+        {role:"受容：直さず、まず見つめる", kind:"action", scene:`${focus}を解決対象ではなく、今ある現実として見つめる`, device:"手元を静かに動かす", payoff:"派手ではないが覚悟が出る"},
+        {role:"問い：答えを黒や余白に残す", kind:"release", scene:`${punch}を結論にせず、読者が意味を置ける余白で終える`, device:"大きな余韻のコマ", payoff:"読者に選択を返す"}
+      ]
+    };
+  }
+
+  function routeHumanRecovery({focus, punch, lead, buddy}){
+    return {
+      name:"できなさを責めない回復ルート",
+      beats:[
+        {role:"入口：できない自分を責める直前", kind:"low", scene:`${lead}が「${focus}」を前にして、また止まりそうになる`, device:"止まった手元と生活小物", payoff:"読者の自分ごと化"},
+        {role:"比較：できている人との差が刺さる", kind:"friction", scene:`周囲の進みと${lead}の停止を同じ画面に置く`, device:"人物の距離と画面光で差を見せる", payoff:"痛みが具体化する"},
+        {role:"反転：失敗ではなくサイズが大きすぎただけ", kind:"turn", scene:`${buddy}が責めずに、${focus}を小さく持てる形へ変える`, device:"散らかった要素を一つに分ける", payoff:"自己否定がほどける"},
+        {role:"小行動：完璧でないまま触る", kind:"action", scene:`${lead}が一つだけ、手で触れる行動に変える`, device:"指先から背中へカメラを移す", payoff:"下手でも始まった実感"},
+        {role:"余韻：続けるか変えるかを選べる", kind:"release", scene:`最後に${punch}をやさしく残し、読者へ問いを返す`, device:"最初と対になる明るさ", payoff:"結論を押しつけない"}
+      ]
+    };
+  }
+
+  function routeDiscovery({focus, punch, lead, buddy}){
+    return {
+      name:"発見を体験化する基本ルート",
+      beats:[
+        {role:"違和感：まだ名前のない引っかかり", kind:"low", scene:`${lead}が「${focus}」に引っかかるが、まだ言葉にできない`, device:"小物と間で入口を作る", payoff:"読者が考え始める"},
+        {role:"観察：同じものを別角度で見る", kind:"friction", scene:`同じ題材を、手元・背中・画面の順に見直す`, device:"カメラを変えて意味をずらす", payoff:"説明ではなく発見へ向かう"},
+        {role:"発見：見方が一段反転する", kind:"turn", scene:`${buddy}または小さな出来事が、${focus}の意味を変える`, device:"メクリ風の大ゴマ", payoff:"予定調和を崩す"},
+        {role:"実験：発見を一つの行動にする", kind:"action", scene:`${lead}が発見を、今日できる一動作へ落とす`, device:"行動の分解", payoff:"抽象が体験になる"},
+        {role:"余白：本音だけを残す", kind:"release", scene:`${punch}を読者の手元に残して終える`, device:"問いの余白", payoff:"読後に選択が残る"}
+      ]
+    };
+  }
+
+  function classifyRole(role){
+    if(/Low|停滞|過去|誤解|対立|共感|圧|孤独|困りごと|ドン|ほわ|前フリ|入口|妄想爆発|未来先出し|即フック|空白/.test(role)) return "low";
+    if(/違和感|比較|実験|現在|内省|沈黙|発見|派手に失敗|小さく失敗|ズレ|展開|現実|連打|微細|観察/.test(role)) return "friction";
+    if(/転換|本音|分解|登場|比喩|支え|亀裂|キャラ|やさしく|割り込む|ツッコミ|誤読|反転/.test(role)) return "turn";
+    if(/行動|橋渡し|入水|共同|原則|反撃|受容|試す|一気|ちょっと|暴走|加速|小行動/.test(role)) return "action";
+    return "release";
+  }
+
+  function buildPages(input, core){
+    const count = Math.max(1, Math.min(12, Number(input.pages) || 5));
+    const taste = tasteRules[input.taste] || tasteRules.custom;
+    const profile = getStoryProfile(input.taste);
+    const storyPlan = buildStoryPlan(input, core, count);
+    const pages = [];
+    for(let i=0;i<count;i++){
+      const pageBeat = storyPlan[i] || {role:roleFor(i, count, input), kind:null};
+      const role = pageBeat.role;
+      const kind = pageBeat.kind || classifyRole(role);
+      const layout = pickMangaLayout(kind, i, count, input, core);
+      const emotion = buildEmotion(role, kind, i, count, input.emotion, profile);
+      const panels = buildPanels({input, core, taste, profile, role, kind, index:i, count, layout, pageBeat});
+      pages.push({number:i+1, role, kind, emotion, layout, panels, pageBeat});
+    }
+    return pages;
+  }
+
+  function buildEmotion(role, kind, index, count, level, profile){
+    if(profile?.emotion){
+      const suffix = level >= 4 ? "を強める" : "を軽く置く";
+      return `${pick(profile.emotion, index)}${suffix}`;
+    }
+    const map = {
+      low:["息苦しい","停滞","小さな痛み","置いていかれる"],
+      friction:["違和感","焦り","比較の痛み","空回り"],
+      turn:["発見","沈黙","視点の反転","小さな光"],
+      action:["一歩","覚悟","身体化","実験"],
+      release:["解放","余韻","問い","選択"]
+    };
+    const suffix = level >= 4 ? "を強める" : "を静かに置く";
+    return `${pick(map[kind], index)}${suffix}`;
+  }
+
+  function hashText(text){
+    let hash = 2166136261;
+    for(const ch of String(text || "")){
+      hash ^= ch.charCodeAt(0);
+      hash = Math.imul(hash, 16777619);
+    }
+    return hash >>> 0;
+  }
+
+  function pickMangaLayout(kind, index, count, input, core){
+    if((input.directionMode || "stable") === "stable"){
+      return goldenLayouts[kind] || goldenLayouts.low;
+    }
+    const base = mangaLayouts[kind] || mangaLayouts.low;
+    const mode = input.directionMode || "auto";
+    const preferred = mode === "auto" ? base : base.filter((layout) => layout.tags?.includes(mode));
+    const candidates = preferred.length ? preferred : base;
+    const seed = hashText([core.themeFocus, core.punchline, input.taste, input.structure, mode, count].join("|"));
+    return candidates[(seed + index * 3 + kind.length) % candidates.length];
+  }
+
+  function positionForArea(area, input){
+    const start = input.reading === "rtl" ? "右" : "左";
+    const end = input.reading === "rtl" ? "左" : "右";
+    const map = {
+      startTop:`${start}上`,
+      endTop:`${end}上`,
+      topWide:"上・横長",
+      startMid:`${start}中`,
+      endMid:`${end}中`,
+      midWide:"中段・横長",
+      midThin:"中段・極細",
+      midThin2:"中段・極細",
+      center:"中央",
+      centerWide:"中央・大",
+      startBottom:`${start}下`,
+      endBottom:`${end}下`,
+      bottomWide:"下・横長",
+      bottomKey:"下・大",
+      full:"全面"
+    };
+    return map[area] || area || "中央";
+  }
+
+  function visualDirectionForSlot(slot, layout){
+    const cues = [];
+    const size = slot.size || "";
+    const camera = slot.camera || "";
+    if(/斜め/.test(size)) cues.push("枠を斜めに切って視線を滑らせる");
+    if(/極細/.test(size)) cues.push("時間を細かく刻む横長の細コマ");
+    if(/断ち切り|全面|枠線なし/.test(size)) cues.push("枠線を弱め、ページの外へ感情が漏れる構図");
+    if(/引き|遠景/.test(camera)) cues.push("人物を小さく置き、空間で感情を語る");
+    if(/極アップ|寄り/.test(camera)) cues.push("顔だけでなく手、目元、口元、小物を寄せる");
+    if(/情景|ノイズ/.test(layout.name)) cues.push("説明しない情景ノイズを挟む");
+    return cues.length ? `構図指定: ${cues.join("。")}。` : "";
+  }
+
+  function pageBeatVisualNote(pageBeat, slotIndex, totalSlots){
+    if(!pageBeat) return "";
+    if(slotIndex === 0 && pageBeat.scene) return `ページ固有の事件: ${pageBeat.scene}。`;
+    if(slotIndex === Math.floor(totalSlots / 2) && pageBeat.device) return `演出装置: ${pageBeat.device}。`;
+    if(slotIndex === totalSlots - 1 && pageBeat.payoff) return `決めゴマの狙い: ${pageBeat.payoff}。`;
+    return "";
+  }
+
+  function buildPanels({input, core, taste, profile, role, kind, index, count, layout, pageBeat}){
+    const dialogueLevel = Number(input.dialogue) || 2;
+    const textTone = dialogueLine({input, core, profile, kind, index, count, dialogueLevel});
+    const slots = layout?.slots?.length ? layout.slots : [
+      {area:"startTop", size:"小", camera:pick(cameraPool[kind], 0), visual:0, text:0, note:"視線を自然に流す。"},
+      {area:"endTop", size:"小", camera:pick(cameraPool[kind], 1), visual:1, text:1, note:"説明ではなく、表情か小物で感情を見せる。"},
+      {area:"bottomKey", size:"決めゴマ", camera:pick(cameraPool[kind], 4), visual:4, text:4, note:"1ページ1テーマの感情ピーク。"}
+    ];
+    return slots.map((slot, slotIndex) => {
+      const visualIndex = Number.isInteger(slot.visual) ? slot.visual : slotIndex;
+      const textIndex = Number.isInteger(slot.text) ? slot.text : slotIndex;
+      const baseVisual = visualLine(core, kind, visualIndex, taste, profile);
+      const beatNote = pageBeatVisualNote(pageBeat, slotIndex, slots.length);
+      const direction = visualDirectionForSlot(slot, layout || {name:""});
+      const zNote = input.strictZ && slotIndex === 0 ? "視線誘導はページ内のZラインまたはSラインを意識する。" : "";
+      return {
+        position:positionForArea(slot.area, input),
+        size:slot.size || "中",
+        camera:slot.camera || pick(cameraPool[kind], slotIndex),
+        visual:[baseVisual, beatNote, direction].filter(Boolean).join(" "),
+        text:textTone[textIndex % textTone.length] || "",
+        note:[slot.note, zNote].filter(Boolean).join(" ")
+      };
+    });
+  }
+
+  function visualLine(core, kind, n, taste, profile){
+    const k0 = core.themeFocus || core.keys[0] || "思い";
+    const k1 = core.keys[1] || "きっかけ";
+    const profiledLines = profile?.visual?.[kind];
+    if(profiledLines){
+      return `${humanizeCast(pick(profiledLines, n), core)}${themeVisualNote(core, n)}。画の空気は「${taste.texture}」。`;
+    }
+    const lines = {
+      low:[
+        `${core.protagonist}が日常の部屋で、手を止めたまま座っている`,
+        `机に${k0}に関係するメモやスマホが置かれている`,
+        `画面は開いているのに、指だけが止まっている`,
+        `窓の外だけが明るく、本人の周りに余白がある`,
+        `「このままでは進まない」と体だけが先に知っている表情`
+      ],
+      friction:[
+        `試した結果が並ぶが、どれも同じ場所で止まっている`,
+        `${k1}が抜け落ちていることを、手元の迷いで見せる`,
+        `同じ動作を繰り返す手元を小さく分解する`,
+        `読者代理のリアクションを一拍遅らせる`,
+        `失敗を責めず、「何かが違う」とだけ残す大きな間`
+      ],
+      turn:[
+        `誰かの一言、画面の一文、小さな小物が視点を変える`,
+        `顔を描きすぎず、目線が少し上がる瞬間だけを置く`,
+        `${k1}という見えないきっかけが、ノートや線として可視化される`,
+        `余白の中に、次の行動の入口だけが見える`,
+        `発見を説明せず、体が少し前に傾く`
+      ],
+      action:[
+        `クリック、書く、渡す、踏み出すなど、ひとつだけ具体行動を描く`,
+        `手、足、ペン先、カーソルなど部分の連続で時間を伸ばす`,
+        `${k0}が小さな作業に変わる`,
+        `斜めのコマで、停滞から流れ出す感覚を作る`,
+        `まだ完璧ではないが、もう始まっている姿`
+      ],
+      release:[
+        `表情を大きく置き、最初のページとの落差を見せる`,
+        `背景の光や余白で、読者が自分の答えを置ける場所を作る`,
+        `${core.protagonist}が誰かに結論を押しつけず、選択肢を差し出す`,
+        `小さな道具やメモが、行動の証拠として残っている`,
+        `最後は断定ではなく、読者の手元へ返す余韻`
+      ]
+    };
+    return `${pick(lines[kind], n)}。画の空気は「${taste.texture}」。`;
+  }
+
+  function themeVisualNote(core, n){
+    const focus = cleanText(core.themeFocus);
+    if(!focus || focus === "新しいテーマ") return "";
+    const notes = [
+      `。題材の焦点「${focus}」が一目でわかる小物、画面、メモを入れる`,
+      "",
+      `。「${focus}」に関係する手元や画面を寄せる`,
+      "",
+      `。「${focus}」の一歩が見える結果を置く`
+    ];
+    return notes[n] || "";
+  }
+
+  function humanizeCast(text, core){
+    return String(text)
+      .replaceAll("ボケ役", core.cast?.lead || core.protagonist)
+      .replaceAll("ツッコミ役", core.cast?.buddy || "相棒")
+      .replaceAll("相棒", core.cast?.buddy || "相棒");
+  }
+
+  function dialogueLine({input, core, profile, kind, index, count, dialogueLevel}){
+    const short = dialogueLevel <= 2;
+    const last = index === count - 1;
+    const question = input.questionEnd && last;
+    const focus = shortConcept(core.themeFocus || "この一歩");
+    const punch = shortConcept(core.punchline || core.themeFocus || "この本音");
+    const themedLines = themedDialogue(input.taste, kind, focus, punch, question);
+    if(themedLines){
+      if(!short){
+        return themedLines.map((line) => line ? expandDialogue(line, input.taste) : line);
+      }
+      return themedLines;
+    }
+    if(profile?.dialogue?.[kind]){
+      const lines = profile.dialogue[kind].map((line) => formatDialogueTemplate(line, core));
+      if(question && kind === "release" && lines.length){
+        lines[lines.length - 1] = lines[lines.length - 1].replace(/。$/, "？");
+      }
+      if(!short){
+        return lines.map((line) => line ? expandDialogue(line, input.taste) : line);
+      }
+      return lines;
+    }
+    const map = {
+      low: short
+        ? ["……また止まった。","","準備だけ、増えてる。","","まだ、入ってない。"]
+        : [`${focus}はやりたい。`,"でも、形にする前に止まる。","必要なものを並べているうちに、時間だけが過ぎる。","誰かだけが先に進んで見える。","このまま待っていて、何が変わるんだろう。"],
+      friction: short
+        ? ["できてる、はずなのに。","……違う。","動いてない。","","ここじゃない。"]
+        : ["形にはなった。","でも、触れた時の体温がない。","手順はあるのに、気持ちが動いていない。","同じ場所で止まっている。","足りなかったのは、気合いじゃない。"],
+      turn: short
+        ? ["問題は、そこじゃない。","小さく。","分けてないだけか。","","じゃあ、今できる形に。"]
+        : ["向いていないわけじゃない。","まだ、最初の一歩に分けていなかった。","怖さ、手順、今日できること。","それを分ければ、体は少し動く。","だったら、まず一つだけ試してみよう。"],
+      action: short
+        ? ["押す。","書く。","一歩だけ。","","下手でも、始まった。"]
+        : ["完璧な準備は、今日は置いていく。","今ある言葉を、そのまま材料にする。","手元が動くと、悩みの形が変わる。","怖さは消えない。けど、場面は進む。","できるかどうかは、ここから決めればいい。"],
+      release: short
+        ? ["できた。","",`${focus}が、少し動いた。`,"", question ? "次は、どこから進める？" : "次も、一歩で進める。"]
+        : ["最初の一歩は、完璧じゃない。","でも、もう止まったままではない。",`${focus}が、顔と手と間を持った。`,"続けるか、変えるかも選べる。", question ? "だったら次に、自分はどこから進める？" : "次も、一歩で進める。"]
+    };
+    return map[kind];
+  }
+
+  function themedDialogue(taste, kind, focus, punch, question){
+    const endQuestion = question ? "次は、どこから進める？" : "次も、一歩で進める。";
+    const sets = {
+      female:{
+        low:[`${focus}……。`,"","言えないな。","","ほんとは、進みたい。"],
+        friction:["私だけかな。","",`${focus}が、遠い。`,"","でも、嫌いじゃない。"],
+        turn:["責めなくていい。","少しだけでいい。","形を変えよう。","",`${focus}からでいい。`],
+        action:["やってみる。","震えてる。","でも、押す。","",`${punch}も、置いていく。`],
+        release:["完璧じゃない。","",`${focus}が少し動いた。`,"",endQuestion]
+      },
+      seinen:{
+        low:[`${focus}か。`,"","重いな。","","逃げてるだけか。"],
+        friction:["現実は、甘くない。","",`${punch}が刺さる。`,"","笑えないな。"],
+        turn:["見ろ。","自分で。","ここが本音だ。","",`${focus}から逃げるな。`],
+        action:["やる。","今からだ。","手を動かせ。","",`${punch}でもだ。`],
+        release:["まだ弱い。","",`でも、${focus}は進んだ。`,"",question ? "次は、何を選ぶ？" : "次は、俺が選ぶ。"]
+      },
+      dark:{
+        low:["……。","",`${focus}。`,"","まだ、ここだ。"],
+        friction:["まただ。","",`${punch}。`,"","音がない。"],
+        turn:["見ないふりは、終わり。","",`これも、${focus}の形か。`,"","残そう。"],
+        action:["直さない。","見る。","書く。","",`${punch}だけ残る。`],
+        release:["答えはない。","",`でも、${focus}は消えない。`,"",question ? "次は、何を見る？" : "次も、見ている。"]
+      },
+      softpop:{
+        low:[`${focus}、むずかしいな。`,"","どこから？","","まあ、ひとつずつ。"],
+        friction:["またここ。","",`${punch}もあるし。`,"","ちょっと迷子。"],
+        turn:["小さく分けよ。","それなら。","できるかも。","",`${focus}を一個だけ。`],
+        action:["押してみる。","ぽち。","あ、動いた。","",`${punch}もメモしよ。`],
+        release:["できた。","",`${focus}、次もいけそう。`,"",question ? "一緒にやってみる？" : "一緒にやってみよう。"]
+      },
+      pop:{
+        low:[`${focus}！`,"","止まった！","","突破したい！"],
+        friction:["違う！","そうじゃない！",`${punch}が本音！`,"","画面、止まるな！"],
+        turn:["待ったー！","こっち！","勢い足せ！","",`${focus}で行く！`],
+        action:["押せ！","走れ！","出た！","",`${punch}も込みで！`],
+        release:["できた！","",`${focus}、動いた！`,"",question ? "次、行く？" : "次、行くぞ！"]
+      },
+      yurufuwa:{
+        low:[`${focus}かなぁ。`,"","むずかしい。","","まあ、いっか。"],
+        friction:["あれ？","",`${punch}もある。`,"てへ。","まただ。"],
+        turn:["だいじょうぶ。","小さくね。","それなら。","",`${focus}から。`],
+        action:["ぽち。","かきかき。","できた？","",`${punch}も、そっと。`],
+        release:["よかった。","",`${focus}、ちょっとできた。`,"",question ? "一緒にやる？" : "次も、ちょっとずつ。"]
+      },
+      gag:{
+        low:["うーむ。",`${focus}……。`,"夢が大きすぎる。","","これは大問題じゃ。"],
+        friction:["まず落ち着きましょう。","落ち着く……？","なるほど。","","妄想を正座させる。"],
+        turn:["ひらめいたぞ！","え？","そこですか？","","待ってください。"],
+        action:[`${focus}のために！`,"まず祈る！",`${punch}よ！`,"","そこが本音！"],
+        release:["できたぞ。","","何がですか！","",question ? "本音だけは、正直？" : "本音だけは、正直じゃ。"]
+      }
+    };
+    return sets[taste]?.[kind] || null;
+  }
+
+  function shortConcept(text){
+    const value = cleanConcept(text || "").replace(/[「」]/g,"").trim();
+    return value.length > 20 ? `${value.slice(0,20)}…` : value || "この一歩";
+  }
+
+  function formatDialogueTemplate(line, core){
+    if(!line) return line;
+    return String(line)
+      .replaceAll("{focusShort}", shortConcept(core.themeFocus || "この一歩"))
+      .replaceAll("{punchShort}", shortConcept(core.punchline || core.themeFocus || "この本音"))
+      .replaceAll("{lead}", core.cast?.lead || core.protagonist || "主人公")
+      .replaceAll("{buddy}", core.cast?.buddy || "相棒");
+  }
+
+  function expandDialogue(line, taste){
+    if(!line) return line;
+    const expanders = {
+      female:" でも、今はそれでいい。",
+      seinen:" 逃げずに見ろ。",
+      dark:" ただ、残っている。",
+      softpop:" まずはここから。",
+      pop:" いける、いま動かそう！",
+      yurufuwa:" ちょっとずつでいいよ。",
+      gag:" ……いや、なんでそうなる。",
+      custom:" そのまま進めよう。"
+    };
+    return line.length >= 16 ? line : `${line}${expanders[taste] || ""}`;
+  }
+
+  function directionModeLabel(mode){
+    const labels = {
+      stable:"画像生成安定：王道ネーム文法",
+      auto:"自動",
+      cinematic:"映画的",
+      emotion:"感情重視",
+      speed:"速度重視",
+      gaggap:"ギャグ落差",
+      quiet:"静寂・余韻",
+      sns:"SNS停止"
+    };
+    return labels[mode] || labels.auto;
+  }
+
+  function buildOverview(input, core, pages){
+    const taste = tasteRules[input.taste] || tasteRules.custom;
+    const profile = getStoryProfile(input.taste);
+    const purposeMap = {
+      sns:"スクロールを止める短い感情変化",
+      article:"本文の主張を、読者が体験できる場面",
+      lp:"悩みから行動までを自然につなぐ導線"
+    };
+    const html = `
+      <div class="result-grid">
+        <div class="summary-box">
+          <strong>読者の入口</strong>
+          <p>${escapeHtml(core.readerEntrance || core.conflict)}</p>
+        </div>
+        <div class="summary-box">
+          <strong>カタルシス</strong>
+          <p>${escapeHtml(profile.catharsis || "「できない理由」を責めず、視点が反転して小さな行動に変わる瞬間を描く。")}</p>
+        </div>
+        <div class="summary-box">
+          <strong>持ち帰る発見</strong>
+          <p>${escapeHtml(core.shift)}</p>
+        </div>
+        <div class="summary-box">
+          <strong>目的</strong>
+          <p>${purposeMap[input.purpose]}</p>
+        </div>
+        <div class="summary-box">
+          <strong>テイスト</strong>
+          <p>${taste.label}。${taste.text}<br>${escapeHtml(profile.scenarioRule || "")}</p>
+        </div>
+        <div class="summary-box">
+          <strong>演出モード</strong>
+          <p>${escapeHtml(directionModeLabel(input.directionMode))}。${escapeHtml(pages[0]?.pageBeat?.route || "自動展開")}。${escapeHtml(pages.map((p) => p.layout?.name).filter(Boolean).join(" / "))}</p>
+        </div>
+        <div class="summary-box">
+          <strong>全体の流れ</strong>
+          <p>${pages.map((p) => p.role.replace(/^[^：]+：/,"")).join(" → ")}</p>
+        </div>
+      </div>
+    `;
+    $("#overviewBody").innerHTML = html;
+  }
+
+  function renderThumb(layout, page){
+    const style = layout.rowTemplate ? ` style="grid-template-rows:${escapeHtml(layout.rowTemplate)}"` : "";
+    return `
+      <div class="thumb ${layout.cls || ""}"${style} aria-label="${page.role}のコマ割り">
+        ${layout.rows.map((row, rowIndex) => `
+          <div class="thumb-row cols-${row.length}">
+            ${row.map((label, colIndex) => {
+              const isKey = /決め|転換|余韻/.test(label);
+              const dark = page.kind === "dark" || (page.kind === "turn" && rowIndex === 0 && colIndex === 0);
+              return `<div class="mini-panel ${isKey ? "key" : ""} ${dark ? "dark" : ""}">${label}</div>`;
+            }).join("")}
+          </div>
+        `).join("")}
+      </div>
+    `;
+  }
+
+  function buildPagesView(pages){
+    $("#pagesBody").innerHTML = `<div class="page-list">${pages.map((page) => `
+      <article class="page-row">
+        <div class="page-row-head">
+          <div class="page-no">${page.number}</div>
+          <div>
+            <div class="page-role">${escapeHtml(page.role)}</div>
+            <div class="page-emotion">${escapeHtml(page.emotion)} / ${escapeHtml(page.layout?.name || "基本レイアウト")}</div>
+          </div>
+          <span class="badge">${page.panels.length}コマ</span>
+        </div>
+        <div class="page-content">
+          ${renderThumb(page.layout, page)}
+          <div class="panel-list">
+            <div class="panel-item">
+              <div class="panel-tag">意図</div>
+              <div class="panel-text">
+                <b>${escapeHtml(page.pageBeat?.route || "自動展開")}</b><br>
+                ${escapeHtml(page.pageBeat?.scene || "入力テーマの感情を具体場面として見せる。")}<br>
+                ${escapeHtml(page.pageBeat?.device || page.layout?.intent || "感情に合わせてコマの強弱を作る。")}
+              </div>
+            </div>
+            ${page.panels.map((panel, idx) => `
+              <div class="panel-item">
+                <div class="panel-tag">${idx + 1}コマ</div>
+                <div class="panel-text">
+                  <b>${escapeHtml(panel.position)}・${escapeHtml(panel.size)}</b> / ${escapeHtml(panel.camera)}<br>
+                  ${escapeHtml(panel.visual)}<br>
+                  <b>文字:</b> ${escapeHtml(panel.text || "無言")}<br>
+                  <b>意図:</b> ${escapeHtml(panel.note)}
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      </article>
+    `).join("")}</div>`;
+  }
+
+  function buildMarkdown(input, core, pages){
+    const taste = tasteRules[input.taste] || tasteRules.custom;
+    const profile = getStoryProfile(input.taste);
+    const lines = [];
+    lines.push("# 汎用マンガネーム");
+    lines.push("");
+    lines.push("## コア設計");
+    lines.push(`- 読者の入口: ${core.readerEntrance || core.conflict}`);
+    lines.push(`- 題材の焦点: ${core.themeFocus}`);
+    lines.push(`- カタルシス: ${profile.catharsis || "できない理由を責めず、視点が反転して小さな行動に変わる瞬間"}`);
+    lines.push(`- パラダイムシフト: ${core.shift}`);
+    lines.push(`- テイスト: ${taste.label}`);
+    lines.push(`- 画のルール: ${taste.texture}`);
+    lines.push(`- 文字の方針: ${taste.text}`);
+    lines.push(`- シナリオ方針: ${profile.scenarioRule || "入力文の感情に合わせて、展開と演出を調整する"}`);
+    lines.push(`- 演出モード: ${directionModeLabel(input.directionMode)}`);
+    lines.push(`- 展開ルート: ${pages[0]?.pageBeat?.route || "自動展開"}`);
+    lines.push(`- 使用する演出変化: ${pages.map((p) => p.layout?.name).filter(Boolean).join(" / ")}`);
+    if(input.directionMode === "stable"){
+      lines.push("- 王道ネーム文法: 右上の状況、左上の手元、右中の具体物、左中の横顔、下段の決めゴマで1ページを読ませる。");
+    }
+    lines.push("");
+    pages.forEach((page) => {
+      lines.push(`## ${page.number}ページ目（役割：${page.role}）`);
+      const z = input.strictZ ? "右上から左上へ入り、右中・左中を通って下の決めゴマへ落とすZライン。" : "上から下へ自然に読ませる流れ。";
+      if(page.pageBeat?.scene) lines.push(`**【このページの事件】**: ${page.pageBeat.scene}`);
+      if(page.pageBeat?.device) lines.push(`**【演出装置】**: ${page.pageBeat.device}`);
+      lines.push(`**【ページ全体のレイアウト・コマ数意図】**: ${page.panels.length}コマ。演出パターンは「${page.layout?.name || "基本"}」。${page.layout?.intent || "感情に合わせてコマの強弱を作る。"} ${page.layout?.grammar || ""} ${z} 感情は「${page.emotion}」。`);
+      page.panels.forEach((panel, idx) => {
+        const speech = panel.text ? `「${panel.text}」` : "セリフなし";
+        lines.push(`* ${idx + 1}コマ目（${panel.position}・${panel.size}）: [${panel.camera}] ${panel.visual} ${speech}（${panel.note}）`);
+      });
+      lines.push("");
+    });
+    lines.push(...buildAIDirectorLines(input, core, pages));
+    return lines.join("\n");
+  }
+
+  function buildAIDirectorLines(input, core, pages){
+    const taste = tasteRules[input.taste] || tasteRules.custom;
+    const layoutNames = [...new Set(pages.map((p) => p.layout?.name).filter(Boolean))].join(" / ");
+    return [
+      "",
+      "## AI演出ディレクター用リライト指示",
+      "以下は、生成したネームをAIでさらに磨くときの追加指示です。",
+      "",
+      `- 物語の核「${core.themeFocus}」と、最後に残す本音「${core.punchline || core.themeFocus}」は変えない。`,
+      `- テイストは「${taste.label}」を維持する。ただし、構図、コマ数、ページ内の時間操作は大胆に変えてよい。`,
+      `- 現在の演出パターン: ${layoutNames || "基本レイアウト"}`,
+      "- 顔アップの連続を避け、手元、背中、画面、沈黙の小物、情景ノイズ、極端な引きを混ぜる。",
+      "- 各ページに必ず、読者の指が止まる決めゴマを1つ置く。",
+      "- 3案出す場合は、A: 感情重視、B: 速度重視、C: 余韻重視に分ける。",
+      "- セリフは増やさず、コマ割り、間、カメラ、余白で感情を変える。",
+      "- 画像生成用には、細かい日本語文字やUI文字を描かせず、空フキダシと後入れ前提にする。"
+    ];
+  }
+
+  function buildPrompt(input, core, pages){
+    const taste = tasteRules[input.taste] || tasteRules.custom;
+    const profile = getStoryProfile(input.taste);
+    const mode = input.mono ? "完全なモノクロ漫画。スクリーントーンと黒ベタで光と影を作る。" : "カラー漫画。光源と色温度で感情を作る。";
+    const lettering = input.splitText
+      ? "フキダシとモノローグ枠は空白で作る。日本語セリフとUI文字は後工程で正確に入れる。"
+      : "短い日本語セリフのみを大きく読みやすく入れる。細かいUI文字は描き込まない。";
+    return [
+      "# 画像生成プロンプト",
+      "",
+      "以下のテキストネームをもとに、日本のマンガ原稿を生成してください。",
+      "",
+      `- 画面比率: 9:16`,
+      `- 読み方向: ${input.reading === "rtl" ? "右開き、右上から左下へ読む" : "左開き、左上から右下へ読む"}`,
+      `- 表現: ${mode}`,
+      `- テイスト: ${taste.label}`,
+      `- 画の質感: ${taste.texture}`,
+      `- カメラ方針: ${taste.camera}`,
+      `- シナリオ方針: ${profile.scenarioRule || "入力文の温度に合わせて展開を調整する"}`,
+      `- 展開ルート: ${pages[0]?.pageBeat?.route || "自動展開"}`,
+      `- コマ割り方針: ページごとにコマ数、余白、斜め分割、細コマ、断ち切り大ゴマを変える。使用演出は「${pages.map((p) => p.layout?.name).filter(Boolean).join(" / ")}」。`,
+      input.directionMode === "stable" ? "- 王道ネーム文法: 右上に状況、左上に手元、右中に具体物、左中に横顔、下段に背中越しの感情大ゴマを置く。1ページを5コマのZラインで読ませる。" : "",
+      `- 文字方針: ${lettering}`,
+      "- 1ページにつき、必ず読者の指を止める決めゴマを1つ入れる。",
+      "- 顔アップの連続にしない。手元、背中、画面、部屋の引き、横顔、沈黙の小物を混ぜる。",
+      "- 説明ナレーションで状況を処理しない。表情、姿勢、カメラ、余白で感情を伝える。",
+      "- キャラクター参照画像がある場合、全ページで髪型、服装、シルエット、小物を固定する。",
+      "",
+      "## 物語の核",
+      `読者の入口: ${core.readerEntrance || core.conflict}`,
+      `題材の焦点: ${core.themeFocus}`,
+      `カタルシス: ${profile.catharsis || "視点が変わる瞬間"}`,
+      `発見: ${core.shift}`,
+      "",
+      "## ページ別プロンプト",
+      ...pages.flatMap((page) => [
+        "",
+        `### ${page.number}ページ目: ${page.role} / 演出: ${page.layout?.name || "基本"}`,
+        `このページの事件: ${page.pageBeat?.scene || "入力テーマの感情を具体場面として見せる"}`,
+        `演出装置: ${page.pageBeat?.device || "カメラ、余白、間で感情を動かす"}`,
+        `感情ピーク: ${page.emotion}`,
+        `コマ割り: ${page.panels.length}コマ。${page.layout?.intent || "感情に合わせてコマの強弱を作る。"} ${page.layout?.grammar || ""} ${input.strictZ ? "Zラインを明確にする。" : "視線を自然に流す。"}`,
+        ...page.panels.map((panel, idx) => `${idx + 1}. ${panel.position} ${panel.size} / ${panel.camera} / ${panel.visual} / フキダシ: ${panel.text || "空白"}`)
+      ])
+    ].join("\n");
+  }
+
+  function buildCheck(input, core, pages){
+    const profile = getStoryProfile(input.taste);
+    const layoutCount = new Set(pages.map((p) => p.layout?.name).filter(Boolean)).size;
+    const panelCounts = [...new Set(pages.map((p) => p.panels.length))].join(" / ");
+    const items = [
+      ["決めゴマ", pages.every((p) => p.panels.some((panel) => /決めゴマ/.test(panel.size))) ? "各ページに感情ピークがあります。" : "決めゴマが足りないページがあります。"],
+      ["構図変化", `${layoutCount}種類の演出パターンを使用。ページごとのコマ数は ${panelCounts} コマです。`],
+      ["王道ネーム文法", input.directionMode === "stable" ? "手元、部屋の引き、具体物、横顔、下段の決めゴマを基本に、画像生成AIが原稿として理解しやすい形にしています。" : "演出モードで崩しています。安定した漫画原稿にしたい場合は「画像生成安定」を選んでください。"],
+      ["説明過多", Number(input.dialogue) <= 3 ? "セリフ量は抑えめです。絵で見せる余白があります。" : "セリフが多めです。画像生成前にさらに削ると安定します。"],
+      ["キャラ維持", cleanText(sanitizeCharacterText(input.characterText)) ? "キャラ設定があります。画像生成時は参照画像も添付してください。" : "キャラ設定が薄いです。髪型、服装、口癖、弱点を足すと安定します。"],
+      ["視線誘導", input.strictZ ? "各ページにZラインの意図を入れています。" : "読み方向の指定は弱めです。必要ならZラインをオンにしてください。"],
+      ["テイスト整合", profile.scenarioRule || "入力文の温度に合わせて展開を調整しています。"],
+      ["今回の学び", "固定5コマに寄せず、メクリ、細コマ、情景ノイズ、断ち切り、急な引きで時間と感情を操作します。"]
+    ];
+    $("#checkBody").innerHTML = `<div class="checklist">${items.map(([title, body]) => `
+      <div class="check-row">
+        <div class="mark">✓</div>
+        <div><b>${escapeHtml(title)}</b><br>${escapeHtml(body)}</div>
+      </div>
+    `).join("")}</div>`;
+  }
+
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, (ch) => ({
+      "&":"&amp;",
+      "<":"&lt;",
+      ">":"&gt;",
+      '"':"&quot;",
+      "'":"&#039;"
+    }[ch]));
+  }
+
+  function readInput(){
+    return {
+      sourceText:$("#sourceText").value,
+      characterText:$("#characterText").value,
+      purpose:current.purpose,
+      taste:$("#taste").value,
+      structure:$("#structure").value,
+      directionMode:$("#directionMode").value,
+      pages:$("#pages").value,
+      reading:$("#reading").value,
+      emotion:$("#emotionRange").value,
+      dialogue:$("#dialogueRange").value,
+      mono:$("#mono").checked,
+      splitText:$("#splitText").checked,
+      questionEnd:$("#questionEnd").checked,
+      strictZ:$("#strictZ").checked
+    };
+  }
+
+  function generate(){
+    const input = readInput();
+    const core = buildCore(input);
+    const pages = buildPages(input, core);
+    current.markdown = buildMarkdown(input, core, pages);
+    current.prompt = buildPrompt(input, core, pages);
+    current.hasGenerated = true;
+    buildOverview(input, core, pages);
+    buildPagesView(pages);
+    buildCheck(input, core, pages);
+    $("#nameOut").textContent = current.markdown;
+    $("#promptOut").textContent = current.prompt;
+    saveState(input);
+  }
+
+  function saveState(input){
+    clearSavedState();
+  }
+
+  function loadState(){
+    clearSavedState();
+  }
+
+  function clearSavedState(){
+    try{
+      localStorage.removeItem("manga-name-system-state");
+    }catch(_e){}
+  }
+
+  function clearGeneratedOutput(message){
+    current.markdown = "";
+    current.prompt = "";
+    current.hasGenerated = false;
+    $("#overviewBody").innerHTML = `<div class="empty">${escapeHtml(message || "新しいテーマを入れて生成してください。")}</div>`;
+    $("#pagesBody").innerHTML = `<div class="empty">新しいテーマで生成すると、ページごとの役割とコマ割りプレビューがここに出ます。</div>`;
+    $("#nameOut").textContent = "まだ生成されていません。";
+    $("#promptOut").textContent = "まだ生成されていません。";
+    $("#checkBody").innerHTML = `<div class="empty">生成後に、決めゴマ、説明過多、キャラ維持、視線誘導を確認します。</div>`;
+  }
+
+  function markOutputStale(){
+    if(!current.hasGenerated) return;
+    clearGeneratedOutput("入力が変わりました。新しいテーマで「生成」を押してください。");
+  }
+
+  function bindInputResetHandlers(){
+    const ids = [
+      "sourceText","characterText","taste","structure","directionMode","pages","reading",
+      "emotionRange","dialogueRange","mono","splitText","questionEnd","strictZ"
+    ];
+    ids.forEach((id) => {
+      const el = $(`#${id}`);
+      const eventName = el.matches("textarea, input[type='range'], input[type='number']") ? "input" : "change";
+      el.addEventListener(eventName, () => {
+        if(id === "emotionRange" || id === "dialogueRange") syncRanges();
+        markOutputStale();
+        saveState(readInput());
+      });
+    });
+  }
+
+  function setPurpose(value){
+    current.purpose = value;
+    $$("#purposeSeg button").forEach((btn) => btn.classList.toggle("active", btn.dataset.value === value));
+  }
+
+  async function copyText(text){
+    const value = text || "";
+    if(!value.trim()){
+      showToast("コピーする内容がありません");
+      return;
+    }
+    try{
+      await navigator.clipboard.writeText(value);
+    }catch(_e){
+      const ta = document.createElement("textarea");
+      ta.value = value;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+    }
+    showToast("コピーしました");
+  }
+
+  function getCurrentText(){
+    if(current.activeView === "name") return $("#nameOut").textContent;
+    if(current.activeView === "prompt") return $("#promptOut").textContent;
+    if(current.activeView === "pages") return $("#pagesBody").innerText;
+    if(current.activeView === "check") return $("#checkBody").innerText;
+    return $("#overviewBody").innerText;
+  }
+
+  function showToast(message){
+    const toast = $("#toast");
+    toast.textContent = message;
+    toast.classList.add("show");
+    clearTimeout(showToast.timer);
+    showToast.timer = setTimeout(() => toast.classList.remove("show"), 1600);
+  }
+
+  function downloadMarkdown(){
+    if(!current.markdown.trim()){
+      showToast("先に生成してください");
+      return;
+    }
+    const blob = new Blob([current.markdown + "\n\n---\n\n" + current.prompt], {type:"text/markdown;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const stamp = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = `manga-name-${stamp}.md`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function resetInputs(){
+    $("#sourceText").value = "";
+    $("#characterText").value = "";
+    $("#taste").value = "female";
+    $("#structure").value = "universal";
+    $("#directionMode").value = "stable";
+    $("#pages").value = 5;
+    $("#reading").value = "rtl";
+    $("#emotionRange").value = 4;
+    $("#dialogueRange").value = 2;
+    $("#mono").checked = true;
+    $("#splitText").checked = true;
+    $("#questionEnd").checked = true;
+    $("#strictZ").checked = true;
+    setPurpose("sns");
+    syncRanges();
+    clearSavedState();
+    clearGeneratedOutput("新しいテーマを入れて生成してください。");
+    showToast("新規テーマにしました");
+  }
+
+  function fillSample(){
+    $("#sourceText").value = "朝の散歩を始めたいけど、玄関で毎日止まってしまう。完璧な習慣より、靴を履くだけでも一歩だと伝えたい。";
+    $("#characterText").value = "ミカ：慎重で、始める前に考えすぎる会社員。\\nハル：やさしく背中を押す友人。小さく始めるのが得意。";
+    $("#taste").value = "female";
+    $("#structure").value = "universal";
+    $("#directionMode").value = "stable";
+    $("#pages").value = 5;
+    setPurpose("article");
+    generate();
+    showToast("サンプルを生成しました");
+  }
+
+  function syncRanges(){
+    $("#emotionValue").textContent = $("#emotionRange").value;
+    $("#dialogueValue").textContent = $("#dialogueRange").value;
+  }
+
+  $("#generatorForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    generate();
+    showToast("生成しました");
+  });
+
+  $("#purposeSeg").addEventListener("click", (event) => {
+    const btn = event.target.closest("button[data-value]");
+    if(!btn) return;
+    setPurpose(btn.dataset.value);
+    markOutputStale();
+    saveState(readInput());
+  });
+
+  $("#tabs").addEventListener("click", (event) => {
+    const btn = event.target.closest("button[data-view]");
+    if(!btn) return;
+    current.activeView = btn.dataset.view;
+    $$(".tab").forEach((tab) => tab.classList.toggle("active", tab === btn));
+    $$(".output").forEach((view) => view.classList.toggle("active", view.id === `view-${current.activeView}`));
+  });
+
+  $("#copyBtn").addEventListener("click", () => copyText([current.markdown, current.prompt].filter(Boolean).join("\n\n---\n\n")));
+  $("#copyCurrentBtn").addEventListener("click", () => copyText(getCurrentText()));
+  $("#downloadBtn").addEventListener("click", downloadMarkdown);
+  $("#clearBtn").addEventListener("click", resetInputs);
+  $("#sampleBtn").addEventListener("click", fillSample);
+
+  loadState();
+  bindInputResetHandlers();
+  syncRanges();
+})();
+</script>
+</body>
+</html>

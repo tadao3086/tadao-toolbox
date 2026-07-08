@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIマンガ制作統合ツール</title>
+<style>
+  :root{
+    --bg:#f4f8fb;
+    --panel:#ffffff;
+    --ink:#1b2a36;
+    --muted:#60798b;
+    --line:#d8e7ef;
+    --deep:#10283a;
+    --deep2:#243f51;
+    --cyan:#36c6e2;
+    --pink:#f45aa0;
+    --pink2:#fff0f7;
+    --green:#2fa872;
+    --yellow:#f0bd4f;
+    --shadow:0 10px 30px rgba(22,49,70,.08);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",Meiryo,sans-serif;
+    line-height:1.55;
+  }
+  .app{
+    max-width:1440px;
+    margin:44px auto;
+    background:#f8fbfd;
+    border:1px solid #d6e2ea;
+    box-shadow:0 2px 10px rgba(20,39,54,.12);
+  }
+  header{
+    background:linear-gradient(115deg,#08283d,#10143a 68%,#1b0d35);
+    color:#fff;
+    border-bottom:3px solid var(--pink);
+    padding:26px 34px 22px;
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:22px;
+    align-items:center;
+  }
+  .brand{
+    display:flex;
+    gap:18px;
+    align-items:center;
+  }
+  .bookmark{
+    width:34px;
+    height:34px;
+    border-radius:8px;
+    background:#f8fbff;
+    color:#0e2a3c;
+    display:grid;
+    place-items:center;
+    font-weight:900;
+    box-shadow:0 0 0 3px rgba(54,198,226,.22);
+  }
+  h1{
+    margin:0 0 4px;
+    color:#ff66aa;
+    font-size:26px;
+    line-height:1.2;
+    letter-spacing:0;
+  }
+  .version{
+    margin:0;
+    color:#48d7ef;
+    font-weight:800;
+    font-size:14px;
+  }
+  .subtitle{
+    margin:4px 0 0;
+    color:#b8d6e7;
+    font-size:13px;
+    font-weight:700;
+  }
+  .top-actions{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+  }
+  .ghostlink,.solidlink{
+    border-radius:999px;
+    padding:10px 14px;
+    font-size:13px;
+    font-weight:800;
+    text-decoration:none;
+    white-space:nowrap;
+  }
+  .ghostlink{
+    color:#dff6ff;
+    border:1px solid rgba(255,255,255,.28);
+    background:rgba(255,255,255,.06);
+  }
+  .solidlink{
+    color:#111827;
+    background:#fff;
+  }
+  .tabs{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    border-bottom:1px solid #d4e2eb;
+    background:#3f5665;
+  }
+  .tab{
+    appearance:none;
+    border:0;
+    border-right:1px solid rgba(255,255,255,.12);
+    background:#3f5665;
+    color:#eef7fc;
+    min-height:70px;
+    padding:12px 10px;
+    font:inherit;
+    font-weight:900;
+    cursor:pointer;
+  }
+  .tab span{
+    display:block;
+    font-size:12px;
+    color:#b9d4e2;
+    font-weight:800;
+    margin-top:2px;
+  }
+  .tab.active{
+    background:#6a5d74;
+    color:#ff69aa;
+    box-shadow:inset 0 -4px 0 var(--pink);
+  }
+  .content{
+    padding:30px;
+  }
+  .view{display:none}
+  .view.active{display:block}
+  .notice{
+    width:min(1068px,100%);
+    margin:0 auto 28px;
+    border-left:4px solid #31c7e4;
+    background:#dff7fb;
+    color:#24586d;
+    border-radius:6px;
+    padding:14px 18px;
+    font-size:15px;
+    font-weight:700;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns:minmax(0,1.06fr) minmax(380px,.94fr);
+    gap:22px;
+    align-items:start;
+  }
+  .wide-grid{
+    display:grid;
+    grid-template-columns:repeat(12,1fr);
+    gap:18px;
+    align-items:start;
+  }
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:8px;
+    box-shadow:var(--shadow);
+    padding:20px;
+  }
+  .card.soft{
+    box-shadow:none;
+    background:#fbfdfe;
+  }
+  .span-4{grid-column:span 4}
+  .span-5{grid-column:span 5}
+  .span-6{grid-column:span 6}
+  .span-7{grid-column:span 7}
+  .span-8{grid-column:span 8}
+  .span-12{grid-column:1/-1}
+  .section-title{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    margin:0 0 14px;
+    font-size:17px;
+    line-height:1.3;
+  }
+  .num{
+    display:inline-grid;
+    place-items:center;
+    width:26px;
+    height:26px;
+    border-radius:8px;
+    background:var(--pink);
+    color:#fff;
+    font-size:14px;
+    font-weight:900;
+    flex:0 0 auto;
+  }
+  label{
+    display:block;
+    font-size:13px;
+    color:#37586b;
+    font-weight:900;
+    margin:16px 0 7px;
+  }
+  .hint{
+    color:var(--muted);
+    font-size:12px;
+    margin:7px 0 0;
+  }
+  input[type="text"],input[type="number"],select,textarea{
+    width:100%;
+    border:1px solid #cfe0e9;
+    background:#fff;
+    color:var(--ink);
+    border-radius:8px;
+    padding:11px 12px;
+    font:inherit;
+    font-size:14px;
+    outline:none;
+  }
+  input[type="text"]:focus,input[type="number"]:focus,select:focus,textarea:focus{
+    border-color:#61c7de;
+    box-shadow:0 0 0 3px rgba(54,198,226,.18);
+  }
+  textarea{
+    min-height:160px;
+    resize:vertical;
+  }
+  textarea.dark{
+    background:#112b3c;
+    color:#c8e6f5;
+    border-color:#31536a;
+  }
+  textarea.output{
+    min-height:330px;
+    background:#f9fcfd;
+  }
+  .row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+  }
+  .chips{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin:10px 0 0;
+  }
+  .choice{
+    position:relative;
+  }
+  .choice input{
+    position:absolute;
+    opacity:0;
+    inset:0;
+    cursor:pointer;
+  }
+  .choice span{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    min-height:42px;
+    padding:10px 16px;
+    border-radius:999px;
+    border:2px solid #d1e5ef;
+    background:#fff;
+    color:#42667a;
+    font-size:14px;
+    font-weight:900;
+    cursor:pointer;
+  }
+  .choice input:checked + span{
+    color:#fff;
+    background:var(--pink);
+    border-color:var(--pink);
+  }
+  .button-row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+    margin-top:16px;
+  }
+  button.action{
+    border:0;
+    background:var(--pink);
+    color:#fff;
+    border-radius:999px;
+    padding:12px 18px;
+    font:inherit;
+    font-weight:900;
+    cursor:pointer;
+    min-height:44px;
+  }
+  button.action.secondary{
+    color:#315366;
+    background:#fff;
+    border:2px solid #cfe0e9;
+  }
+  button.action.dark{
+    background:#102b3c;
+  }
+  .copy-state{
+    color:var(--green);
+    font-size:12px;
+    font-weight:900;
+    min-height:18px;
+  }
+  .stat-row{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px;
+  }
+  .stat{
+    border:1px solid #d9e7ef;
+    background:#fff;
+    border-radius:8px;
+    padding:12px;
+  }
+  .stat b{
+    display:block;
+    font-size:20px;
+    line-height:1.1;
+  }
+  .stat span{
+    color:var(--muted);
+    font-size:12px;
+    font-weight:800;
+  }
+  .diagnosis{
+    display:grid;
+    gap:10px;
+    margin-top:14px;
+  }
+  .diag-item{
+    display:grid;
+    grid-template-columns:36px 1fr auto;
+    gap:10px;
+    align-items:center;
+    border:1px solid #d9e7ef;
+    background:#fff;
+    border-radius:8px;
+    padding:10px 12px;
+  }
+  .badge{
+    display:grid;
+    place-items:center;
+    width:28px;
+    height:28px;
+    border-radius:50%;
+    color:#fff;
+    font-weight:900;
+    background:#9aaeba;
+  }
+  .diag-item.ok .badge{background:var(--green)}
+  .diag-item.warn .badge{background:var(--yellow)}
+  .diag-item.bad .badge{background:#e85b76}
+  .diag-item strong{
+    display:block;
+    font-size:14px;
+  }
+  .diag-item small{
+    display:block;
+    color:var(--muted);
+    font-size:12px;
+  }
+  .score{
+    color:#334e5f;
+    font-weight:900;
+    font-size:13px;
+  }
+  .image-uploader{
+    border:2px dashed #bfd7e4;
+    background:#f7fbfd;
+    border-radius:8px;
+    min-height:220px;
+    display:grid;
+    place-items:center;
+    text-align:center;
+    padding:18px;
+    overflow:hidden;
+  }
+  .image-uploader img{
+    max-width:100%;
+    max-height:260px;
+    object-fit:contain;
+    border-radius:8px;
+    background:#fff;
+    box-shadow:0 8px 20px rgba(20,39,54,.12);
+  }
+  .image-uploader .empty{
+    color:#5c788a;
+    font-weight:900;
+  }
+  input[type="file"]{
+    width:100%;
+    border:1px solid #cfe0e9;
+    border-radius:8px;
+    padding:10px;
+    background:#fff;
+  }
+  .design-preview{
+    background:#fff;
+    border:1px solid #efd9dd;
+    border-radius:8px;
+    padding:14px;
+    display:grid;
+    gap:10px;
+  }
+  .preview-head{
+    display:grid;
+    grid-template-columns:1fr 110px;
+    gap:12px;
+    align-items:center;
+  }
+  .preview-title{
+    font-size:28px;
+    line-height:1.1;
+    font-weight:950;
+  }
+  .preview-sub{
+    font-size:12px;
+    color:#111827;
+    font-weight:800;
+    margin-top:5px;
+  }
+  .avatar-card{
+    aspect-ratio:1;
+    border-radius:8px;
+    background:linear-gradient(135deg,#fff,#fdeff5);
+    border:1px solid #f3d2dc;
+    display:grid;
+    place-items:center;
+    overflow:hidden;
+  }
+  .avatar-card img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+  }
+  .avatar-mark{
+    width:72px;
+    height:72px;
+    border-radius:50%;
+    border:5px solid #111;
+    position:relative;
+  }
+  .avatar-mark:before,.avatar-mark:after{
+    content:"";
+    position:absolute;
+    top:-30px;
+    width:17px;
+    height:50px;
+    border:4px solid #111;
+    background:#fff;
+    border-radius:999px;
+  }
+  .avatar-mark:before{left:12px;transform:rotate(-18deg)}
+  .avatar-mark:after{right:12px;transform:rotate(18deg)}
+  .preview-tags{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .preview-tags span{
+    border:1px solid #f2b7c9;
+    border-radius:999px;
+    padding:5px 12px;
+    font-size:12px;
+    font-weight:900;
+    background:#fff;
+  }
+  .mini-board{
+    display:grid;
+    grid-template-columns:repeat(12,1fr);
+    gap:8px;
+  }
+  .mini-box{
+    border:1px solid #f0dce1;
+    border-radius:8px;
+    background:#fffafc;
+    min-height:74px;
+    padding:8px;
+    font-size:10px;
+    font-weight:900;
+  }
+  .mini-box:nth-child(1){grid-column:span 4}
+  .mini-box:nth-child(2){grid-column:span 4}
+  .mini-box:nth-child(3){grid-column:span 4}
+  .mini-box:nth-child(4){grid-column:span 6}
+  .mini-box:nth-child(5){grid-column:span 6}
+  .swatches{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:8px;
+    margin-top:8px;
+  }
+  .swatch{
+    height:34px;
+    border-radius:5px;
+    border:1px solid #e4d7da;
+  }
+  .flow{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px;
+  }
+  .flow-step{
+    border:1px solid #dbe9f0;
+    border-radius:8px;
+    background:#fff;
+    padding:12px;
+    min-height:102px;
+  }
+  .flow-step b{
+    display:block;
+    margin-bottom:8px;
+  }
+  .flow-step p{
+    margin:0;
+    color:var(--muted);
+    font-size:12px;
+    font-weight:700;
+  }
+  .library{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:14px;
+  }
+  .template-card{
+    border:1px solid #d9e7ef;
+    border-radius:8px;
+    background:#fff;
+    padding:14px;
+  }
+  .template-card h3{
+    margin:0 0 6px;
+    font-size:15px;
+  }
+  .template-card p{
+    margin:0 0 12px;
+    color:var(--muted);
+    font-size:12px;
+    font-weight:700;
+  }
+  .template-card button{
+    width:100%;
+    border:0;
+    border-radius:8px;
+    background:#102b3c;
+    color:#fff;
+    padding:10px;
+    font:inherit;
+    font-size:13px;
+    font-weight:900;
+    cursor:pointer;
+  }
+  .footer-note{
+    margin:24px 0 0;
+    color:var(--muted);
+    font-size:12px;
+    font-weight:700;
+  }
+  @media(max-width:1000px){
+    .app{margin:0;border:0}
+    header{grid-template-columns:1fr;padding:20px}
+    .top-actions{justify-content:flex-start}
+    .tabs{grid-template-columns:1fr 1fr}
+    .tab:last-child{grid-column:1/-1}
+    .content{padding:20px}
+    .grid,.row{grid-template-columns:1fr}
+    .wide-grid{grid-template-columns:1fr}
+    .span-4,.span-5,.span-6,.span-7,.span-8,.span-12{grid-column:1}
+    .stat-row,.flow{grid-template-columns:1fr 1fr}
+  }
+  @media(max-width:560px){
+    .brand{align-items:flex-start}
+    h1{font-size:22px}
+    .tab{min-height:60px;font-size:14px}
+    .stat-row,.flow{grid-template-columns:1fr}
+    .preview-head{grid-template-columns:1fr}
+    .mini-box:nth-child(n){grid-column:1/-1}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="bookmark">M</div>
+      <div>
+        <h1>AIマンガ制作統合ツール</h1>
+        <p class="version">Ver.1.0</p>
+        <p class="subtitle">読まれるネーム設計、ChatGPT画像生成プロンプト、キャラクターデザインボードを一つに集約</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <a class="ghostlink" href="#diagnosis-view" data-jump="diagnosis">ネーム診断へ</a>
+      <a class="solidlink" href="#character-view" data-jump="character">デザインボード生成へ</a>
+    </div>
+  </header>
+
+  <nav class="tabs" aria-label="制作メニュー">
+    <button class="tab active" data-view="prompt">プロンプトメーカー<span>ページ別画像生成</span></button>
+    <button class="tab" data-view="script">AI脚本化<span>テーマからネームへ</span></button>
+    <button class="tab" data-view="manual">手動生成<span>一コマ・4コマ・8ページ</span></button>
+    <button class="tab" data-view="character">キャラクター設定<span>画像受け取り・ボード化</span></button>
+    <button class="tab" data-view="diagnosis">ネーム診断<span>読まれる設計チェック</span></button>
+  </nav>
+
+  <main class="content">
+    <section class="view active" id="prompt-view">
+      <div class="notice">コマ割り済みのネームを貼ると、ChatGPT画像生成用のページ別プロンプトに変換します。文字は後入れ前提にして、絵の破綻を減らします。</div>
+      <div class="grid">
+        <div class="card">
+          <h2 class="section-title"><span class="num">1</span>ネームを貼る</h2>
+          <label for="pageNeme">ページ・コマ割り済みネーム</label>
+          <textarea id="pageNeme" class="dark" placeholder="例&#10;## 1ページ目&#10;1コマ目（右上・小）：主人公がスマホを見て固まる。セリフ「また、後ででいいか」&#10;2コマ目（左上・小）：指先のアップ。通知が増える。&#10;3コマ目（下・大）：暗い部屋で小さく座る。モノローグ「後で、の山にいる」"></textarea>
+
+          <div class="row">
+            <div>
+              <label for="artStyle">画風</label>
+              <select id="artStyle">
+                <option value="mono">日本マンガ白黒</option>
+                <option value="pop">ポップなカラー漫画</option>
+                <option value="soft">淡い水彩・手描き風</option>
+                <option value="poster">広告漫画・強い視線誘導</option>
+              </select>
+            </div>
+            <div>
+              <label for="letteringMode">文字の扱い</label>
+              <select id="letteringMode">
+                <option value="blank">空フキダシにして後から文字入れ</option>
+                <option value="short">短い日本語だけ画像内に入れる</option>
+              </select>
+            </div>
+          </div>
+
+          <label>読み方向</label>
+          <div class="chips">
+            <label class="choice"><input type="radio" name="reading" value="right" checked><span>右開き・右上から左下</span></label>
+            <label class="choice"><input type="radio" name="reading" value="web"><span>Web用・上から下</span></label>
+          </div>
+
+          <label for="pageCharacter">キャラクター参照メモ</label>
+          <textarea id="pageCharacter" placeholder="例：添付画像のキャラクターを全ページで維持。白黒のうさぎ耳、黒髪、白い服、やさしいが少し不安げな表情。別人化しない。"></textarea>
+
+          <div class="button-row">
+            <button class="action" id="buildPagePrompts">ページ別プロンプト生成</button>
+            <button class="action secondary" data-clear="page">入力を消す</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 class="section-title"><span class="num">2</span>生成結果</h2>
+          <label for="pagePromptOut">ChatGPT画像生成用プロンプト</label>
+          <textarea id="pagePromptOut" class="output" readonly placeholder="ここにページ別プロンプトが出ます"></textarea>
+          <div class="button-row">
+            <button class="action dark" data-copy="pagePromptOut" data-state="pageCopyState">コピー</button>
+            <span class="copy-state" id="pageCopyState"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="script-view">
+      <div class="notice">テーマや伝えたいことを、読者が自然に最後まで読むネーム設計へ変換するための依頼文を作ります。</div>
+      <div class="grid">
+        <div class="card">
+          <h2 class="section-title"><span class="num">1</span>脚本化の材料</h2>
+          <label for="themeInput">テーマ・伝えたいこと</label>
+          <textarea id="themeInput" placeholder="例：スキマ時間を無駄にしてしまう人が、完璧な準備より小さな実行を選ぶ話"></textarea>
+
+          <div class="row">
+            <div>
+              <label for="scriptLength">長さ</label>
+              <select id="scriptLength">
+                <option value="one">一コママンガ</option>
+                <option value="four">4コママンガ</option>
+                <option value="eight">8ページマンガ</option>
+              </select>
+            </div>
+            <div>
+              <label for="toneSelect">トーン</label>
+              <select id="toneSelect">
+                <option value="human">人間讃歌・余白あり</option>
+                <option value="comedy">軽いギャグ・親しみ</option>
+                <option value="business">ビジネス気づき系</option>
+                <option value="dark">静かなダークリアル</option>
+              </select>
+            </div>
+          </div>
+
+          <label for="readerPain">読者の痛み・最初の共感</label>
+          <input id="readerPain" type="text" placeholder="例：やろうと思うのに、また後回しにしてしまう">
+
+          <label for="lastQuestion">最後に残したい問い</label>
+          <input id="lastQuestion" type="text" placeholder="例：完璧になるまで待つより、今ひとつ動いた方がよくない？">
+
+          <div class="button-row">
+            <button class="action" id="buildScriptPrompt">脚本化プロンプト生成</button>
+            <button class="action secondary" data-clear="script">入力を消す</button>
+          </div>
+        </div>
+        <div class="card">
+          <h2 class="section-title"><span class="num">2</span>ChatGPTに渡す依頼文</h2>
+          <label for="scriptPromptOut">ネーム作成用プロンプト</label>
+          <textarea id="scriptPromptOut" class="output" readonly></textarea>
+          <div class="button-row">
+            <button class="action dark" data-copy="scriptPromptOut" data-state="scriptCopyState">コピー</button>
+            <span class="copy-state" id="scriptCopyState"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="manual-view">
+      <div class="notice">最初からAIに丸投げせず、型を選んで手動で調整しながら、使える制作指示を作ります。一コママンガもここで作れます。</div>
+      <div class="wide-grid">
+        <div class="card span-5">
+          <h2 class="section-title"><span class="num">1</span>型を選ぶ</h2>
+          <label>出力タイプ</label>
+          <div class="chips">
+            <label class="choice"><input type="radio" name="manualType" value="one" checked><span>一コママンガ</span></label>
+            <label class="choice"><input type="radio" name="manualType" value="four"><span>4コママンガ</span></label>
+            <label class="choice"><input type="radio" name="manualType" value="eight"><span>8ページマンガ</span></label>
+            <label class="choice"><input type="radio" name="manualType" value="pages"><span>ページ別プロンプト</span></label>
+          </div>
+
+          <label for="manualHook">最初に読者を止める一言</label>
+          <input id="manualHook" type="text" placeholder="例：それ、やる気不足じゃない">
+
+          <label for="manualMessage">伝えたい結論</label>
+          <textarea id="manualMessage" placeholder="例：人は大きな決意ではなく、今できる小さな一歩で変わり始める。"></textarea>
+
+          <label for="manualCast">登場キャラ・関係性</label>
+          <textarea id="manualCast" placeholder="例：だーや：迷って止まる人。やーだ：ゆるく本質を刺す相棒。"></textarea>
+
+          <div class="button-row">
+            <button class="action" id="buildManual">手動生成テンプレート作成</button>
+          </div>
+        </div>
+        <div class="card span-7">
+          <h2 class="section-title"><span class="num">2</span>調整用テンプレート</h2>
+          <label for="manualOut">出力</label>
+          <textarea id="manualOut" class="output" readonly></textarea>
+          <div class="button-row">
+            <button class="action dark" data-copy="manualOut" data-state="manualCopyState">コピー</button>
+            <span class="copy-state" id="manualCopyState"></span>
+          </div>
+        </div>
+        <div class="card span-12 soft">
+          <h2 class="section-title"><span class="num">3</span>制作の流れ</h2>
+          <div class="flow">
+            <div class="flow-step"><b>問いを置く</b><p>説明から入らず、読者の中に小さな疑問を作る。</p></div>
+            <div class="flow-step"><b>感情を動かす</b><p>情報ではなく、表情・手元・沈黙で変化を見せる。</p></div>
+            <div class="flow-step"><b>決めゴマを作る</b><p>1ページに1つ、スクロールを止める大きな画を置く。</p></div>
+            <div class="flow-step"><b>問いで閉じる</b><p>結論を押し付けず、読者が自分で選べる余白を残す。</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="character-view">
+      <div class="notice">ユーザー画像を受け取り、キャラ設定と親レシピ用デザインシステムボード生成プロンプトに変換します。画像そのものはChatGPTへ一緒に添付してください。</div>
+      <div class="wide-grid">
+        <div class="card span-5">
+          <h2 class="section-title"><span class="num">1</span>画像とキャラ情報</h2>
+          <label for="charImage">キャラクター画像</label>
+          <input id="charImage" type="file" accept="image/*">
+          <p class="hint">この画面ではプレビューだけ行います。実際の画像生成時は、同じ画像をChatGPTに添付します。</p>
+          <div class="image-uploader" id="imagePreview"><div class="empty">画像を選ぶとここに表示されます</div></div>
+
+          <div class="row">
+            <div>
+              <label for="charName">キャラ名</label>
+              <input id="charName" type="text" placeholder="例：DAOちゃん">
+            </div>
+            <div>
+              <label for="boardUse">用途</label>
+              <select id="boardUse">
+                <option value="mass">量産向け</option>
+                <option value="brand">ブランド運用</option>
+                <option value="manga">マンガ制作</option>
+                <option value="teaching">教材・講座</option>
+              </select>
+            </div>
+          </div>
+
+          <label for="charLook">見た目・固定したい特徴</label>
+          <textarea id="charLook" placeholder="例：白黒の長い髪、うさぎ耳、白い服、丸い目、やさしい表情。耳と髪のシルエットを必ず残す。"></textarea>
+
+          <label for="charVoice">口調・性格</label>
+          <textarea id="charVoice" placeholder="例：やさしい、少し照れ屋、短い言葉で本質を言う。説明しすぎない。"></textarea>
+
+          <label for="charCore">弱点・欲望・物語上の役割</label>
+          <textarea id="charCore" placeholder="例：弱点は自信がなく考え込みすぎること。欲望は、誰かの役に立つ形で自分を表現したいこと。"></textarea>
+        </div>
+
+        <div class="card span-7">
+          <h2 class="section-title"><span class="num">2</span>デザインボード生成</h2>
+          <div class="design-preview" aria-label="デザインボードのプレビュー">
+            <div class="preview-head">
+              <div>
+                <div class="preview-title" id="previewName">キャラ名</div>
+                <div class="preview-sub">親レシピ用 デザインシステムボード</div>
+              </div>
+              <div class="avatar-card" id="boardAvatar"><div class="avatar-mark"></div></div>
+            </div>
+            <div class="preview-tags">
+              <span>量産向け</span><span>キャラ運用</span><span>図解</span><span>漫画</span><span>スライド</span>
+            </div>
+            <div class="mini-board">
+              <div class="mini-box">1 コンセプト</div>
+              <div class="mini-box">2 見出しルール</div>
+              <div class="mini-box">3 カラーパレット<div class="swatches"><div class="swatch" style="background:#111"></div><div class="swatch" style="background:#ebe2dc"></div><div class="swatch" style="background:#f7bfd1"></div><div class="swatch" style="background:#d9dde5"></div><div class="swatch" style="background:#fff"></div></div></div>
+              <div class="mini-box">4 展開サンプル</div>
+              <div class="mini-box">5 差し替え項目</div>
+            </div>
+          </div>
+
+          <label for="boardExtra">ボードに入れたい項目・世界観</label>
+          <textarea id="boardExtra" placeholder="例：note見出し、Brainサムネ、講座スライド、漫画、キャラクターシート、グッズ展開。淡いピンク、白、黒、清潔感、保存したくなる実用感。"></textarea>
+
+          <div class="button-row">
+            <button class="action" id="buildBoardPrompt">デザインボードプロンプト生成</button>
+            <button class="action secondary" id="buildCharacterPrompt">キャラ固定プロンプト生成</button>
+          </div>
+
+          <label for="boardPromptOut">生成プロンプト</label>
+          <textarea id="boardPromptOut" class="output" readonly></textarea>
+          <div class="button-row">
+            <button class="action dark" data-copy="boardPromptOut" data-state="boardCopyState">コピー</button>
+            <span class="copy-state" id="boardCopyState"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="diagnosis-view">
+      <div class="notice">ネームを貼ると、最後まで読まれるための最低条件をチェックします。点数より「どこを直せば強くなるか」を見るための診断です。</div>
+      <div class="grid">
+        <div class="card">
+          <h2 class="section-title"><span class="num">1</span>ネーム診断</h2>
+          <label for="diagNeme">診断したいネーム</label>
+          <textarea id="diagNeme" class="dark" placeholder="ネーム全文を貼り付け"></textarea>
+          <div class="button-row">
+            <button class="action" id="runDiagnosis">診断する</button>
+            <button class="action secondary" data-clear="diagnosis">入力を消す</button>
+          </div>
+          <div class="stat-row" id="diagStats">
+            <div class="stat"><b>0</b><span>文字数</span></div>
+            <div class="stat"><b>0</b><span>ページ数</span></div>
+            <div class="stat"><b>0</b><span>コマ数</span></div>
+            <div class="stat"><b>0</b><span>診断点</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <h2 class="section-title"><span class="num">2</span>チェック結果</h2>
+          <div class="diagnosis" id="diagResult"></div>
+          <label for="rewriteOut">改善指示プロンプト</label>
+          <textarea id="rewriteOut" class="output" readonly></textarea>
+          <div class="button-row">
+            <button class="action dark" data-copy="rewriteOut" data-state="diagCopyState">コピー</button>
+            <span class="copy-state" id="diagCopyState"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <p class="footer-note">このHTMLはローカルで完結します。画像は外部送信せず、プレビューとプロンプト生成だけを行います。</p>
+  </main>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const tabs = document.querySelectorAll('.tab');
+const views = document.querySelectorAll('.view');
+
+function activeView(name){
+  tabs.forEach(tab => tab.classList.toggle('active', tab.dataset.view === name));
+  views.forEach(view => view.classList.toggle('active', view.id === name + '-view'));
+}
+
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => activeView(tab.dataset.view));
+});
+document.querySelectorAll('[data-jump]').forEach(link => {
+  link.addEventListener('click', event => {
+    event.preventDefault();
+    const target = link.dataset.jump;
+    activeView(target);
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+});
+
+function checked(name){
+  const el = document.querySelector(`input[name="${name}"]:checked`);
+  return el ? el.value : '';
+}
+function words(text){ return String(text || '').trim(); }
+function countMatches(text, pattern){
+  const match = String(text || '').match(pattern);
+  return match ? match.length : 0;
+}
+function splitPages(text){
+  const raw = words(text);
+  if(!raw) return [];
+  const normalized = raw.replace(/\r\n/g, '\n');
+  const chunks = normalized.split(/(?=^#{1,3}\s*\d+\s*ページ|^\d+\s*ページ目|^Page\s*\d+)/gmi)
+    .map(s => s.trim()).filter(Boolean);
+  if(chunks.length > 1) return chunks;
+  return [normalized];
+}
+function selectedLabel(selectId){
+  const el = $(selectId);
+  return el.options[el.selectedIndex]?.textContent || '';
+}
+function styleInstruction(style){
+  const map = {
+    mono:'日本の白黒マンガ。黒ベタ、スクリーントーン、整理された線、強い明暗。色は使わない。',
+    pop:'ポップなカラー漫画。表情を大きく、色は感情の温度として使う。説明図ではなく、感情で読ませる。',
+    soft:'淡い水彩と手描き線。余白、紙の質感、やわらかい光。大人っぽく静かな温度感。',
+    poster:'広告漫画のような強い視線誘導。大きな顔、手元、斜め構図、読み止める大ゴマを優先。'
+  };
+  return map[style] || map.mono;
+}
+function readingInstruction(mode){
+  if(mode === 'web') return 'Web表示向けに上から下へ読める構成。ただしコマ内の視線は右上から左下へ自然に流す。';
+  return '日本の漫画形式。右開き、右上から左上、右下から左下へ流れるZ字視線誘導を守る。';
+}
+
+function buildPagePrompts(){
+  const neme = words($('pageNeme').value);
+  const pages = splitPages(neme);
+  const style = $('artStyle').value;
+  const lettering = $('letteringMode').value;
+  const charMemo = words($('pageCharacter').value) || '添付したキャラクター画像の見た目、髪型、服装、配色、シルエット、表情の傾向を全ページで維持する。別人化しない。';
+  if(!neme){
+    $('pagePromptOut').value = 'ネームを貼ってから生成してください。';
+    return;
+  }
+  const textRule = lettering === 'blank'
+    ? '画像内の日本語テキストは正確性が崩れやすいため、セリフとモノローグは入れない。空のフキダシ、空のモノローグ枠、文字を後入れできる余白だけを作る。'
+    : '日本語は短い一言だけに絞る。長文、細かいUI文字、正確な数値は入れない。読みやすい縦書きにする。';
+
+  const output = pages.map((page, index) => {
+    return `# Page ${String(index + 1).padStart(2,'0')} ChatGPT画像生成用プロンプト
+
+## 目的
+このページを、読者が自然に次へ進みたくなる日本マンガの1ページとして生成する。
+情報説明より、キャラクターの感情ピークと視線誘導を優先する。
+
+## キャラクター参照
+${charMemo}
+
+## 画風
+${styleInstruction(style)}
+
+## 読み方向・コマ設計
+${readingInstruction(checked('reading'))}
+均一なグリッドにしない。ページ内に必ず1つ、スクロールを止める決めゴマを作る。
+大ゴマは、顔の寄り、手元の極アップ、背中の引き、画面越しの発光、沈黙の余白のどれかで感情を伝える。
+
+## 文字の扱い
+${textRule}
+
+## 生成するネーム
+${page}
+
+## 仕上げチェック
+- 1ページで感情が伝わる
+- キャラクターが参照画像と別人になっていない
+- 右上から左下への視線誘導がある
+- 説明文字に頼りすぎていない
+- 空フキダシや余白が後入れ文字の邪魔をしない`;
+  }).join('\n\n---\n\n');
+  $('pagePromptOut').value = output;
+}
+
+function buildScriptPrompt(){
+  const theme = words($('themeInput').value) || 'ここにマンガ化したいテーマを入れる';
+  const length = selectedLabel('scriptLength');
+  const tone = selectedLabel('toneSelect');
+  const pain = words($('readerPain').value) || '読者が最初に共感できる痛みを、こちらで自然に設計する';
+  const question = words($('lastQuestion').value) || '結論を断定せず、読者が自分で選べる問いを残す';
+  $('scriptPromptOut').value = `あなたは日本マンガの構成作家・編集者です。
+次のテーマから、読者が自然に最後まで読める「${length}」のネームを作ってください。
+
+## テーマ
+${theme}
+
+## トーン
+${tone}
+
+## 読者の最初の痛み
+${pain}
+
+## 最後に残したい問い
+${question}
+
+## 必ず守る設計
+1. 最初に世界観説明をしない。読者の中に問いを作る。
+2. 主人公の感情の核を先に決める。傷、本音、恐れ、欲望を明確にする。
+3. セリフは短くする。説明は絵、手元、沈黙、余白で見せる。
+4. 1ページまたは1作品につき、読者が止まる決めゴマを作る。
+5. 日本マンガの読み順を守る。右上から左下への視線誘導を、フキダシと構図で設計する。
+6. クライマックスでは、感情が論理を上回る瞬間を作る。
+7. 最後は断定ではなく、読者に選択の余白が残る問いで閉じる。
+
+## 出力形式
+最初に以下を短く出してください。
+- カタルシス：読者の予定調和をどう壊すか
+- パラダイムシフト：読後に何が反転して見えるか
+- 主人公の感情の核：傷、本音、欲望、最後の小さな一歩
+
+その後、ページまたはコマごとに以下の形式で出してください。
+- コマ位置とサイズ
+- カメラ位置
+- 描写
+- セリフまたはモノローグ
+- 視線誘導の意図
+
+説明っぽいナレーションを避け、主観的な独白と絵の演出で読ませてください。`;
+}
+
+function buildManual(){
+  const type = checked('manualType');
+  const hook = words($('manualHook').value) || 'それ、やる気不足じゃない';
+  const message = words($('manualMessage').value) || '伝えたい結論をここに入れる';
+  const cast = words($('manualCast').value) || '登場キャラと関係性をここに入れる';
+  const common = `## 共通ルール
+- 説明から入らず、最初に読者を止める問いを置く
+- セリフは短く、絵と間で読ませる
+- 日本マンガの右上から左下への視線誘導を守る
+- 結論を押し付けず、最後に選択の余白を残す
+- 画像生成時は、文字入れを後工程に分けられるよう空フキダシも指定する`;
+
+  const variants = {
+    one:`# 一コママンガ 手動生成テンプレート
+
+## 読者を止める一言
+${hook}
+
+## 伝えたい結論
+${message}
+
+## 登場キャラ
+${cast}
+
+## 画面設計
+一枚絵として成立させる。複数コマにしない。
+主役の表情、手元、シルエット、余白、吹き出しのどれかを一番強く見せる。
+一言コピーは大きく。ただし文字破綻を避けたい場合は空白フキダシで後入れ。
+
+## 構成
+1. 視線が最初に止まる主役の顔または手元
+2. 伝えたいテーマを象徴する小物
+3. 大きな余白または吹き出し
+4. 読後に残る短い問い
+
+${common}`,
+    four:`# 4コママンガ 手動生成テンプレート
+
+## フック
+${hook}
+
+## 伝えたい結論
+${message}
+
+## 登場キャラ
+${cast}
+
+## コマ構成
+1コマ目（右上）：読者の痛みをそのまま置く。説明しない。
+2コマ目（左上）：小さな違和感、反論、ズレを出す。
+3コマ目（右下）：感情が動く。表情か手元を大きく見せる。
+4コマ目（左下・決め）：結論を断定せず、短い問いで閉じる。
+
+${common}`,
+    eight:`# 8ページマンガ 手動生成テンプレート
+
+## フック
+${hook}
+
+## 伝えたい結論
+${message}
+
+## 登場キャラ
+${cast}
+
+## ページ構成
+1ページ目：Low。読者の痛みと主人公の停滞を見せる。
+2ページ目：問い。なぜ止まってしまうのかを、状況ではなく感情で出す。
+3ページ目：衝突。主人公の理屈と、相手の一言がぶつかる。
+4ページ目：分解。手元、目線、通知、小物で時間をゆっくり見せる。
+5ページ目：メクリ。黒、白、空白などで内面の底を作る。
+6ページ目：反転。小さな行動が生まれる。
+7ページ目：決めゴマ。主人公が一歩だけ動く。
+8ページ目：余韻。答えではなく問いを残す。
+
+${common}`,
+    pages:`# ページ別プロンプト生成 手動テンプレート
+
+## フック
+${hook}
+
+## 伝えたい結論
+${message}
+
+## 登場キャラ
+${cast}
+
+## 使い方
+下のページ設計を1ページずつ画像生成プロンプトに変換する。
+各ページで、決めゴマ、感情ピーク、空フキダシ、視線誘導を必ず指定する。
+
+## ページ設計
+Page 1：
+Page 2：
+Page 3：
+Page 4：
+
+${common}`
+  };
+  $('manualOut').value = variants[type] || variants.one;
+}
+
+function updatePreviewName(){
+  $('previewName').textContent = words($('charName').value) || 'キャラ名';
+}
+$('charName').addEventListener('input', updatePreviewName);
+
+$('charImage').addEventListener('change', event => {
+  const file = event.target.files && event.target.files[0];
+  if(!file) return;
+  const url = URL.createObjectURL(file);
+  $('imagePreview').innerHTML = `<img src="${url}" alt="選択したキャラクター画像のプレビュー">`;
+  $('boardAvatar').innerHTML = `<img src="${url}" alt="デザインボード用プレビュー">`;
+});
+
+function buildBoardPrompt(){
+  const name = words($('charName').value) || 'このキャラクター';
+  const look = words($('charLook').value) || '添付画像から読み取れる見た目、髪型、服装、配色、シルエットを忠実に維持する';
+  const voice = words($('charVoice').value) || 'やさしく、親しみやすく、説明しすぎない';
+  const core = words($('charCore').value) || '弱点、欲望、物語上の役割を、添付画像の雰囲気から自然に整理する';
+  const extra = words($('boardExtra').value) || 'note見出し、サムネ、図解、漫画、スライド、キャラクターシートに展開できる要素';
+  const use = selectedLabel('boardUse');
+  $('boardPromptOut').value = `添付したキャラクター画像をもとに、「${name}」の親レシピ用デザインシステムボードを1枚の横長画像として生成してください。
+
+## 目的
+この1枚を見れば、同じ世界観で制作物を量産できるようにする。
+世界観、配色、文字、構図、差し替え項目、使い回しパーツが分かる実用的なデザインボードにする。
+
+## 用途
+${use}
+
+## キャラクター固定ルール
+${look}
+別人化しない。髪型、服装、配色、顔立ち、年齢感、体型、特徴的な小物を大きく変えない。
+実在キャラクターや既存IPに似せない。オリジナルキャラクターとして扱う。
+
+## 口調・世界観
+${voice}
+
+## 弱点・欲望・役割
+${core}
+
+## ボードに入れる項目
+1. コンセプト・役割
+2. タイポグラフィ・見出しルール
+3. 配色・カラーパレット。メイン、ベース、アクセント、サブ、ハイライトを分ける
+4. トンマナ・世界観キーワード
+5. レイアウト基本パターン。左揃え、中央集中、分割整理、情報量多めカード型
+6. 展開サンプル。${extra}
+7. パーツ例。吹き出し、バッジ、見出し線、矢印、チェック、アイコン、背景パターン、表情差分
+8. プロンプト差し替え項目。固定する要素と差し替える要素を分ける
+9. 運用メモ。初心者にやさしい、実践で使いやすい、保存して再利用しやすい
+
+## 画面設計
+添付例のような、白背景ベースの整理されたデザインボード。
+横長。情報量は多いが、余白を確保し、カードごとに見やすく分ける。
+見出しは太く、短く、読みやすく。小さすぎる文字は禁止。
+キャラクターは右上または各サンプルカード内に配置し、同じキャラに見えるよう統一する。
+淡いアクセントカラーを使い、清潔感と保存したくなる実用感を出す。
+
+## 禁止
+文字を詰め込みすぎない。
+キャラクターを別人にしない。
+背景を派手にしすぎない。
+情報の階層が分からないレイアウトにしない。
+英語だけのボードにしない。主要な見出しと説明は日本語。`;
+}
+
+function buildCharacterPrompt(){
+  const name = words($('charName').value) || 'このキャラクター';
+  const look = words($('charLook').value) || '添付画像の見た目を忠実に維持する';
+  const voice = words($('charVoice').value) || '短く自然な口調';
+  const core = words($('charCore').value) || '弱点、欲望、役割を自然に設計する';
+  $('boardPromptOut').value = `今後のマンガ制作で「${name}」を固定して使うためのキャラクター設定を作ってください。
+
+## 入力
+添付したキャラクター画像を最優先の参照元にする。
+
+## 固定する見た目
+${look}
+
+## 口調・性格
+${voice}
+
+## 弱点・欲望・役割
+${core}
+
+## 出力してほしい項目
+- シルエットの特徴
+- 顔、髪、服、小物、配色
+- 表情差分
+- ポーズ差分
+- 口調サンプル
+- やらないこと、言わないこと
+- 画像生成時の参照ルール
+- 別人化を防ぐネガティブ指定
+- マンガ内での役割
+
+## 注意
+添付画像と違うキャラクターにしない。
+特徴を盛りすぎず、量産時に守れる固定ルールにまとめる。
+実在IPや既存キャラクターに似せない。`;
+}
+
+function runDiagnosis(){
+  const text = words($('diagNeme').value);
+  const pages = countMatches(text, /(^|\n)\s*(#{1,3}\s*)?\d+\s*ページ|Page\s*\d+/gi);
+  const panels = countMatches(text, /\d+\s*コマ|Panel\s*\d+/gi);
+  const chars = text.length;
+  const checks = [
+    {
+      name:'感情の核',
+      ok:/傷|本音|欲望|怖|不安|迷|悔|嬉|痛|願|恐/.test(text),
+      advice:'主人公の傷、本音、恐れ、欲望を1行で足すと、読者が入りやすくなります。'
+    },
+    {
+      name:'最初の問い',
+      ok:/\?|？|なぜ|なんで|どうして|本当に|じゃない/.test(text.slice(0, Math.min(400, text.length))),
+      advice:'冒頭に説明ではなく、読者が気になる問いを置いてください。'
+    },
+    {
+      name:'短いセリフ',
+      ok:!/[「『][^」』]{38,}[」』]/.test(text),
+      advice:'長いセリフを分解し、表情・手元・沈黙のコマに置き換えてください。'
+    },
+    {
+      name:'メクリ・余白',
+      ok:/メクリ|余白|沈黙|無言|黒|白|間|大ゴマ/.test(text),
+      advice:'ページの切り替わりに、沈黙や大ゴマを使った感情の段差を作ってください。'
+    },
+    {
+      name:'視線誘導',
+      ok:/右上|左上|右下|左下|Z字|視線|読み順/.test(text),
+      advice:'各ページに右上から左下へ流すための位置指定を入れてください。'
+    },
+    {
+      name:'決めゴマ',
+      ok:/決めゴマ|大ゴマ|アップ|極アップ|背中|手元|表情/.test(text),
+      advice:'1ページに1つ、読者が止まる大きな画を指定してください。'
+    },
+    {
+      name:'問いで閉じる',
+      ok:/\?|？|よくない|かもしれない|選ぶ|どうする/.test(text.slice(Math.max(0, text.length - 500))),
+      advice:'最後は断定より、読者が自分で選ぶ余白のある問いにすると残ります。'
+    }
+  ];
+  const score = checks.filter(c => c.ok).length;
+  $('diagStats').innerHTML = `
+    <div class="stat"><b>${chars}</b><span>文字数</span></div>
+    <div class="stat"><b>${pages || 1}</b><span>ページ数</span></div>
+    <div class="stat"><b>${panels}</b><span>コマ数</span></div>
+    <div class="stat"><b>${score}/${checks.length}</b><span>診断点</span></div>`;
+  $('diagResult').innerHTML = checks.map((c, i) => {
+    const state = c.ok ? 'ok' : (i < 2 ? 'bad' : 'warn');
+    const mark = c.ok ? 'OK' : '!';
+    return `<div class="diag-item ${state}">
+      <span class="badge">${mark}</span>
+      <div><strong>${c.name}</strong><small>${c.ok ? '入っています。' : c.advice}</small></div>
+      <span class="score">${c.ok ? '達成' : '要修正'}</span>
+    </div>`;
+  }).join('');
+  const issues = checks.filter(c => !c.ok).map(c => `- ${c.name}：${c.advice}`).join('\n') || '- 大きな不足はありません。さらにセリフを削り、絵で見せる余白を磨いてください。';
+  $('rewriteOut').value = `次のネームを、読者が自然に最後まで読みたくなる形に改善してください。
+
+## 改善したい点
+${issues}
+
+## 改善ルール
+- 冒頭は説明ではなく問いから始める
+- 主人公の感情の核を明確にする
+- 長いセリフを削り、表情、手元、沈黙、余白に置き換える
+- 右上から左下への視線誘導を各ページに入れる
+- 1ページに1つ決めゴマを作る
+- 結論を押し付けず、最後に選択の余白を残す
+
+## 元ネーム
+${text || 'ここに元ネームを貼る'}`;
+}
+
+async function copyText(textareaId, stateId){
+  const text = $(textareaId).value;
+  if(!text) return;
+  try{
+    await navigator.clipboard.writeText(text);
+  }catch(_){
+    const area = $(textareaId);
+    area.removeAttribute('readonly');
+    area.select();
+    document.execCommand('copy');
+    area.setAttribute('readonly','');
+  }
+  const state = $(stateId);
+  state.textContent = 'コピーしました';
+  setTimeout(() => state.textContent = '', 1600);
+}
+
+document.querySelectorAll('[data-copy]').forEach(button => {
+  button.addEventListener('click', () => copyText(button.dataset.copy, button.dataset.state));
+});
+
+document.querySelectorAll('[data-clear]').forEach(button => {
+  button.addEventListener('click', () => {
+    const target = button.dataset.clear;
+    if(target === 'page'){
+      $('pageNeme').value = '';
+      $('pageCharacter').value = '';
+      $('pagePromptOut').value = '';
+    }
+    if(target === 'script'){
+      ['themeInput','readerPain','lastQuestion','scriptPromptOut'].forEach(id => $(id).value = '');
+    }
+    if(target === 'diagnosis'){
+      $('diagNeme').value = '';
+      $('diagResult').innerHTML = '';
+      $('rewriteOut').value = '';
+      $('diagStats').innerHTML = '<div class="stat"><b>0</b><span>文字数</span></div><div class="stat"><b>0</b><span>ページ数</span></div><div class="stat"><b>0</b><span>コマ数</span></div><div class="stat"><b>0</b><span>診断点</span></div>';
+    }
+  });
+});
+
+$('buildPagePrompts').addEventListener('click', buildPagePrompts);
+$('buildScriptPrompt').addEventListener('click', buildScriptPrompt);
+$('buildManual').addEventListener('click', buildManual);
+$('buildBoardPrompt').addEventListener('click', buildBoardPrompt);
+$('buildCharacterPrompt').addEventListener('click', buildCharacterPrompt);
+$('runDiagnosis').addEventListener('click', runDiagnosis);
+
+buildScriptPrompt();
+buildManual();
+buildBoardPrompt();
+</script>
+</body>
+</html>
